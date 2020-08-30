@@ -24,7 +24,9 @@ application can be run in either client mode (`-client`) or server mode (`-serve
 ### server mode
 
 #### flags
-- `-port` port on which to run udp server
-- `-timeframe` timestamp sent by client must be between <now-timeframe> and <now>
-- `-command` the command to execute if udp packet sent by client is valid 
+- `-port` port on which to run udp server, default: 8080
+- `-timeframe` timestamp sent by client must be between <now-timeframe> and <now>, default: 5 seconds
+- `-command-start` the command to execute if udp packet sent by client is valid, default: echo "start!"
+- `-command-timeout` the timeout to wait after command-start was executed, default: 60 seconds
+- `-command-end` the command to execute after command-timeout is over, default: echo "end!"
 - `-key-id` key file name of server

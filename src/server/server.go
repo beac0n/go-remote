@@ -10,12 +10,11 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 )
 
-func Run(port *string, keyId *string, timeFrame *int64, command *string) {
+func Run(port *string, keyId *string, timeFrame *int64, command *string, timeout *int64, end *string) {
 	serverKeyFileBytes := util.GetFileBytes(*keyId, util.ServerSuffix)
 
 	serverKeyBytes := serverKeyFileBytes[0:util.ServerKeyLen]
@@ -24,11 +23,35 @@ func Run(port *string, keyId *string, timeFrame *int64, command *string) {
 	packetConnection := setupPacketConnection(port)
 
 	for {
-		if validateIncomingData(packetConnection, serverKeyBytes, cryptoKeyBytes, timeFrame) {
+		encryptedBytes := make([]byte, util.EncryptedDataLen)
+		n, address, err := packetConnection.ReadFrom(encryptedBytes)
+		if err != nil {
+			log.Println("ERROR could not read packet from connection:", err)
+			continue
+		}
+
+		log.Println("packet from " + address.String())
+
+		if n != util.EncryptedDataLen {
+			log.Println("ERROR incorrect received bytes length")
+			continue
+		}
+
+		if validateIncomingData(encryptedBytes, serverKeyBytes, cryptoKeyBytes, timeFrame) {
 			executeCommand(command)
+			time.Sleep(time.Duration(*timeout) * time.Second)
+			executeCommand(end)
+			emptyBuffer(packetConnection, util.EncryptedDataLen)
 		}
 	}
+}
 
+func emptyBuffer(con net.PacketConn, bytesLength int) {
+	n := 1
+	buffer := make([]byte, bytesLength)
+	for n > 0 {
+		n, _, _ = con.ReadFrom(buffer)
+	}
 }
 
 func setupPacketConnection(port *string) net.PacketConn {
@@ -41,22 +64,7 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(packetConnection net.PacketConn, serverKey []byte, cryptoKeyBytes []byte, timeFrame *int64) bool {
-	encryptedBytes := make([]byte, util.EncryptedDataLen)
-	n, address, err := packetConnection.ReadFrom(encryptedBytes)
-
-	if err != nil {
-		log.Println("ERROR could not read packet from connection:", err)
-		return false
-	}
-
-	addressString := address.String()
-	if n != util.EncryptedDataLen {
-		log.Println("ERROR received " + strconv.Itoa(n) + " bytes from " + addressString + ", but expected " +
-			strconv.Itoa(util.EncryptedDataLen) + " bytes")
-		return false
-	}
-
+func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyBytes []byte, timeFrame *int64) bool {
 	dataBytes, success := util.DecryptData(cryptoKeyBytes, encryptedBytes)
 	if !success {
 		return false
@@ -64,7 +72,7 @@ func validateIncomingData(packetConnection net.PacketConn, serverKey []byte, cry
 
 	messageBytes, signatureBytes := dataBytes[:util.MsgLen], dataBytes[util.MsgLen:util.DataLen]
 	if !ed25519.Verify(serverKey, messageBytes, signatureBytes) {
-		log.Println("ERROR got invalid signature from " + addressString)
+		log.Println("ERROR got invalid signature")
 		return false
 	}
 
@@ -81,7 +89,8 @@ func validateIncomingData(packetConnection net.PacketConn, serverKey []byte, cry
 
 func isTsWithinTimeFrame(timestampInt int64, timeFrame *int64) bool {
 	now := time.Now().UnixNano()
-	return now-*timeFrame < timestampInt && now > timestampInt
+	timeframeNanoSeconds := *timeFrame * 1000000000
+	return now-timeframeNanoSeconds < timestampInt && now > timestampInt
 }
 
 func updateTimestampFile(timestampBytes []byte) {
