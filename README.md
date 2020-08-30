@@ -1,8 +1,8 @@
 # go-remote
 
 This project aims to provide a replacement/addition for tools like knock.
-It does so, by allowing the client, to send a single (specially prepared) UDP packet to the server.
-If the UDP packet contains the correct data, the server will execute the configured command.
+It does so, by allowing the client to send a single (specially prepared) UDP packet to the server.
+If the UDP packet contains the correct data, the server will execute the configured command.2
 
 ## build
 
