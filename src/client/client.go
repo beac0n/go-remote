@@ -33,14 +33,18 @@ func genKeyPair() {
 	nanoSecString := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	cryptoKey := util.GenRandomBytes(util.CryptoKeyLen)
-	filePathServerKey := util.PersistData(nanoSecString, serverKey, cryptoKey, util.ServerSuffix)
-	filePathClientKey := util.PersistData(nanoSecString, clientKey, cryptoKey, util.ClientSuffix)
+
+	filePathServerKey := util.GetServerKeyFilePath(nanoSecString)
+	util.WriteBytes(filePathServerKey, append(serverKey, cryptoKey...))
+
+	filePathClientKey := util.GetClientKeyFilePath(nanoSecString)
+	util.WriteBytes(filePathClientKey, append(clientKey, cryptoKey...))
 
 	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
 }
 
 func getDataToSend(keyId *string) []byte {
-	keyFileBytes := util.GetFileBytes(*keyId, util.ClientSuffix)
+	keyFileBytes := util.ReadBytes(util.GetClientKeyFilePath(*keyId))
 
 	timestampBytes := make([]byte, util.TimestampLen)
 	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))

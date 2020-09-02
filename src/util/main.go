@@ -12,24 +12,28 @@ func Check(err error, reason string) {
 	}
 }
 
-func GetFileBytes(fileName string, suffix string) []byte {
-	keyFileBytes, err := ioutil.ReadFile("./" + fileName + "." + suffix)
-	Check(err, "could not read " + suffix + " file")
+func ReadBytes(filePath string) []byte {
+	fileBytes, err := ioutil.ReadFile(filePath)
+	Check(err, "could not read file "+filePath)
 
-	return keyFileBytes
+	return fileBytes
 }
 
-func PersistData(fileName string, firstBatchBytes []byte, secondBatchBytes []byte, suffix string) string {
-	filePath := "./" + fileName + "." + suffix
-
+func WriteBytes(filePath string, bytes []byte) {
 	file, err := os.Create(filePath)
-	Check(err, "could not create "+suffix+" file")
+	Check(err, "could not create file "+filePath)
 
-	_, err = file.Write(append(firstBatchBytes, secondBatchBytes...))
-	Check(err, "could not write to "+suffix+" file")
+	_, err = file.Write(bytes)
+	Check(err, "could not write to file "+filePath)
 
 	err = file.Close()
-	Check(err, "could not close "+suffix+" file")
+	Check(err, "could not close file "+filePath)
+}
 
-	return filePath
+func GetClientKeyFilePath(keyId string) string {
+	return "./" + keyId + "." + ClientSuffix
+}
+
+func GetServerKeyFilePath(keyId string) string {
+	return "./" + keyId + "." + ServerSuffix
 }

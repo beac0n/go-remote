@@ -8,14 +8,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
 )
 
 func Run(port *string, keyId *string, timeFrame *int64, command *string, timeout *int64, end *string) {
-	serverKeyFileBytes := util.GetFileBytes(*keyId, util.ServerSuffix)
+	serverKeyFileBytes := util.ReadBytes(util.GetServerKeyFilePath(*keyId))
 
 	serverKeyBytes := serverKeyFileBytes[0:util.ServerKeyLen]
 	cryptoKeyBytes := serverKeyFileBytes[util.ServerKeyLen:util.ServerKeyFileLen]
@@ -30,10 +29,10 @@ func Run(port *string, keyId *string, timeFrame *int64, command *string, timeout
 			continue
 		}
 
-		log.Println("packet from " + address.String())
+		log.Println(address.String() + ": ")
 
 		if n != util.EncryptedDataLen {
-			log.Println("ERROR incorrect received bytes length")
+			log.Println("ERROR received incorrect bytes length")
 			continue
 		}
 
@@ -76,12 +75,12 @@ func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyByte
 		return false
 	}
 
-	timestampBytes := dataBytes[:util.TimestampLen]
+	timestampBytes := dataBytes[0:util.TimestampLen]
 	timestampInt := int64(binary.LittleEndian.Uint64(timestampBytes))
 
 	isValid := isTsWithinTimeFrame(timestampInt, timeFrame) && isCurrentTsGreaterLastTs(timestampInt)
 	if isValid {
-		updateTimestampFile(timestampBytes)
+		util.WriteBytes(util.FilePathTimestamp, timestampBytes)
 	}
 
 	return isValid
@@ -91,17 +90,6 @@ func isTsWithinTimeFrame(timestampInt int64, timeFrame *int64) bool {
 	now := time.Now().UnixNano()
 	timeframeNanoSeconds := *timeFrame * 1000000000
 	return now-timeframeNanoSeconds < timestampInt && now > timestampInt
-}
-
-func updateTimestampFile(timestampBytes []byte) {
-	fileTimestamp, err := os.Create(util.FilePathTimestamp)
-	util.Check(err, "could not create timestamp file")
-
-	_, err = fileTimestamp.Write(timestampBytes)
-	util.Check(err, "could not write to timestamp file")
-
-	err = fileTimestamp.Close()
-	util.Check(err, "could not close timestamp file")
 }
 
 func isCurrentTsGreaterLastTs(timestampInt int64) bool {
