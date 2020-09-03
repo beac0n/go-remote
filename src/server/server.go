@@ -120,6 +120,7 @@ func executeCommand(command *string) {
 	var outBytes bytes.Buffer
 	cmd.Stdout = &outBytes
 
+	log.Println("running command " + *command)
 	err := cmd.Run()
 	if err == nil {
 		log.Println(outBytes.String())
