@@ -59,7 +59,7 @@ func emptyBuffer(con net.PacketConn, bytesLength int) {
 	for n > 0 {
 		n, _, err = con.ReadFrom(buffer)
 		if err != nil {
-			log.Println("ERROR could not ReadFrom connection:", err)
+			log.Println("WARN could not ReadFrom connection:", err)
 			break
 		}
 	}
