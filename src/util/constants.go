@@ -19,3 +19,5 @@ const EncryptedDataLen = 156
 const FilePathTimestamp = "./.timestamp"
 const ServerSuffix = "server"
 const ClientSuffix = "client"
+
+const SecInNs = int64(1000000000)

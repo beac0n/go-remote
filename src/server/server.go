@@ -76,29 +76,31 @@ func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyByte
 		return false
 	}
 
-	timestampBytes := dataBytes[0:util.TimestampLen]
-	timestampInt := int64(binary.LittleEndian.Uint64(timestampBytes))
-	timestampStr := strconv.FormatInt(timestampInt, 10)
+	timestampNanoBytes := dataBytes[0:util.TimestampLen]
+	timestampNanoInt := int64(binary.LittleEndian.Uint64(timestampNanoBytes))
+	timestampNanoStr := strconv.FormatInt(timestampNanoInt, 10)
 
-	now := time.Now().UnixNano()
-	nowStr := strconv.FormatInt(now, 10)
+	nowNanoInt := time.Now().UnixNano()
+	nowNanoStr := strconv.FormatInt(nowNanoInt, 10)
 
-	timeframeNanoSeconds := *timeFrame * 1000000000
-	startTs := now - timeframeNanoSeconds
-	startTsStr := strconv.FormatInt(startTs, 10)
+	timeframeNanoSeconds := *timeFrame * util.SecInNs
+	startTimestampNano := nowNanoInt - timeframeNanoSeconds
+	startTimestampNanoStr := strconv.FormatInt(startTimestampNano, 10)
 
-	withinTimeFrame := startTs < timestampInt && now > timestampInt
-	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(timestampInt)
+	withinTimeFrame := startTimestampNano < timestampNanoInt && nowNanoInt > timestampNanoInt
+	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(timestampNanoInt)
 
 	isValid := withinTimeFrame && currentTsGreaterLastTs
 	if isValid {
-		util.WriteBytes(util.FilePathTimestamp, timestampBytes)
+		util.WriteBytes(util.FilePathTimestamp, timestampNanoBytes)
 	} else if !withinTimeFrame {
-		log.Println("ERROR got invalid timestamp. " +
-			"Expected " + timestampStr + " to be between " + startTsStr + " and " + nowStr)
+		log.Println("ERROR got invalid timestamp. Expected " +
+			timestampNanoStr + "(" + time.Unix(timestampNanoInt/util.SecInNs, 0).String() + ") to be between " +
+			startTimestampNanoStr + "(" + time.Unix(startTimestampNano/util.SecInNs, 0).String() + ") and " +
+			nowNanoStr + "(" + time.Unix(nowNanoInt/util.SecInNs, 0).String() + ")")
 	} else if !currentTsGreaterLastTs {
 		log.Println("ERROR got invalid timestamp. " +
-			"Expected " + timestampStr + " to be greater than the last timestamp")
+			"Expected " + timestampNanoStr + " to be greater than the last timestamp")
 	}
 
 	return isValid
