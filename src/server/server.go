@@ -76,31 +76,31 @@ func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyByte
 		return false
 	}
 
-	timestampNanoBytes := dataBytes[0:util.TimestampLen]
-	timestampNanoInt := int64(binary.LittleEndian.Uint64(timestampNanoBytes))
-	timestampNanoStr := strconv.FormatInt(timestampNanoInt, 10)
+	tsNanoBytes := dataBytes[0:util.TimestampLen]
+	tsNanoInt := int64(binary.LittleEndian.Uint64(tsNanoBytes))
+	tsNanoStr := strconv.FormatInt(tsNanoInt, 10)
 
 	nowNanoInt := time.Now().UnixNano()
 	nowNanoStr := strconv.FormatInt(nowNanoInt, 10)
 
 	timeframeNanoSeconds := *timeFrame * util.SecInNs
-	startTimestampNano := nowNanoInt - timeframeNanoSeconds
-	startTimestampNanoStr := strconv.FormatInt(startTimestampNano, 10)
+	startTsNano := nowNanoInt - timeframeNanoSeconds
+	startTsNanoStr := strconv.FormatInt(startTsNano, 10)
 
-	withinTimeFrame := startTimestampNano < timestampNanoInt && nowNanoInt > timestampNanoInt
-	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(timestampNanoInt)
+	withinTimeFrame := startTsNano < tsNanoInt && nowNanoInt > tsNanoInt
+	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(tsNanoInt)
 
 	isValid := withinTimeFrame && currentTsGreaterLastTs
 	if isValid {
-		util.WriteBytes(util.FilePathTimestamp, timestampNanoBytes)
+		util.WriteBytes(util.FilePathTimestamp, tsNanoBytes)
 	} else if !withinTimeFrame {
-		log.Println("ERROR got invalid timestamp. Expected " +
-			timestampNanoStr + "(" + time.Unix(timestampNanoInt/util.SecInNs, 0).String() + ") to be between " +
-			startTimestampNanoStr + "(" + time.Unix(startTimestampNano/util.SecInNs, 0).String() + ") and " +
-			nowNanoStr + "(" + time.Unix(nowNanoInt/util.SecInNs, 0).String() + ")")
+		log.Println("ERROR got invalid timestamp.\n" +
+			"Expected " + tsNanoStr + " (" + time.Unix(tsNanoInt/util.SecInNs, 0).String() + ")\n" +
+			"to be between " + startTsNanoStr + " (" + time.Unix(startTsNano/util.SecInNs, 0).String() + ")\n" +
+			"and " + nowNanoStr + " (" + time.Unix(nowNanoInt/util.SecInNs, 0).String() + ")")
 	} else if !currentTsGreaterLastTs {
 		log.Println("ERROR got invalid timestamp. " +
-			"Expected " + timestampNanoStr + " to be greater than the last timestamp")
+			"Expected " + tsNanoStr + " to be greater than the last timestamp")
 	}
 
 	return isValid
