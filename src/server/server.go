@@ -51,6 +51,7 @@ func emptyBuffer(con net.PacketConn, bytesLength int) {
 	buffer := make([]byte, bytesLength)
 	for n > 0 {
 		n, _, _ = con.ReadFrom(buffer)
+		log.Println(n)
 	}
 }
 
