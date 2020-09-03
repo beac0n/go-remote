@@ -19,7 +19,7 @@ application can be run in either client mode (`-client`) or server mode (`-serve
 - `-gen-key` generate server/client key files
 
 - `-address` udp address with port of remote upd server
-- `-key-id` key file name of client
+- `-key` path to client key file
 
 ### server mode
 
@@ -29,4 +29,4 @@ application can be run in either client mode (`-client`) or server mode (`-serve
 - `-command-start` the command to execute if udp packet sent by client is valid, default: echo "start!"
 - `-command-timeout` the timeout to wait after command-start was executed, default: 60 seconds
 - `-command-end` the command to execute after command-timeout is over, default: echo "end!"
-- `-key-id` key file name of server
+- `-key` path to server key file
