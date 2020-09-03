@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -77,19 +78,30 @@ func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyByte
 
 	timestampBytes := dataBytes[0:util.TimestampLen]
 	timestampInt := int64(binary.LittleEndian.Uint64(timestampBytes))
+	timestampStr := strconv.FormatInt(timestampInt, 10)
 
-	isValid := isTsWithinTimeFrame(timestampInt, timeFrame) && isCurrentTsGreaterLastTs(timestampInt)
+	now := time.Now().UnixNano()
+	nowStr := strconv.FormatInt(now, 10)
+
+	timeframeNanoSeconds := *timeFrame * 1000000000
+	startTs := now - timeframeNanoSeconds
+	startTsStr := strconv.FormatInt(startTs, 10)
+
+	withinTimeFrame := startTs < timestampInt && now > timestampInt
+	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(timestampInt)
+
+	isValid := withinTimeFrame && currentTsGreaterLastTs
 	if isValid {
 		util.WriteBytes(util.FilePathTimestamp, timestampBytes)
+	} else if !withinTimeFrame {
+		log.Println("ERROR got invalid timestamp. " +
+			"Expected " + timestampStr + " to be between " + startTsStr + " and " + nowStr)
+	} else if !currentTsGreaterLastTs {
+		log.Println("ERROR got invalid timestamp. " +
+			"Expected " + timestampStr + " to be greater than the last timestamp")
 	}
 
 	return isValid
-}
-
-func isTsWithinTimeFrame(timestampInt int64, timeFrame *int64) bool {
-	now := time.Now().UnixNano()
-	timeframeNanoSeconds := *timeFrame * 1000000000
-	return now-timeframeNanoSeconds < timestampInt && now > timestampInt
 }
 
 func isCurrentTsGreaterLastTs(timestampInt int64) bool {
