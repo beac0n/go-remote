@@ -13,11 +13,11 @@ import (
 	"time"
 )
 
-func Run(doGenKey *bool, keyId *string, address *string) {
+func Run(doGenKey *bool, keyfilePath *string, address *string) {
 	if *doGenKey {
 		genKeyPair()
-	} else if *keyId != "" && *address != "" {
-		dataToSend := getDataToSend(keyId)
+	} else if *keyfilePath != "" && *address != "" {
+		dataToSend := getDataToSend(keyfilePath)
 		sendData(address, dataToSend)
 	} else {
 		log.Fatal("no valid client flag combination. " +
@@ -34,17 +34,17 @@ func genKeyPair() {
 
 	cryptoKey := util.GenRandomBytes(util.CryptoKeyLen)
 
-	filePathServerKey := util.GetServerKeyFilePath(nanoSecString)
+	filePathServerKey := "./" + nanoSecString + "." + util.ServerSuffix
 	util.WriteBytes(filePathServerKey, append(serverKey, cryptoKey...))
 
-	filePathClientKey := util.GetClientKeyFilePath(nanoSecString)
+	filePathClientKey := "./" + nanoSecString + "." + util.ClientSuffix
 	util.WriteBytes(filePathClientKey, append(clientKey, cryptoKey...))
 
 	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
 }
 
-func getDataToSend(keyId *string) []byte {
-	keyFileBytes := util.ReadBytes(util.GetClientKeyFilePath(*keyId))
+func getDataToSend(keyFilePath *string) []byte {
+	keyFileBytes := util.ReadBytes(*keyFilePath)
 
 	timestampBytes := make([]byte, util.TimestampLen)
 	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))

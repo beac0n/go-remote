@@ -11,7 +11,7 @@ func main() {
 
 	clientMode := flag.Bool("client", false, "run in client mode")
 	serverMode := flag.Bool("server", false, "run in server mode")
-	keyId := flag.String("key-id", "", "key id")
+	keyFilePath := flag.String("key", "", "path to key file")
 
 	// client flags
 	doGenKey := flag.Bool("gen-key", false, "generate key pair")
@@ -31,9 +31,9 @@ func main() {
 	}
 
 	if *clientMode {
-		client.Run(doGenKey, keyId, address)
+		client.Run(doGenKey, keyFilePath, address)
 	} else if *serverMode {
-		server.Run(port, keyId, timeFrame, commandStart, commandTimeout, commandEnd)
+		server.Run(port, keyFilePath, timeFrame, commandStart, commandTimeout, commandEnd)
 	}
 
 }

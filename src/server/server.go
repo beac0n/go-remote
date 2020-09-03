@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func Run(port *string, keyId *string, timeFrame *int64, command *string, timeout *int64, end *string) {
-	serverKeyFileBytes := util.ReadBytes(util.GetServerKeyFilePath(*keyId))
+func Run(port *string, keyFilePath *string, timeFrame *int64, command *string, timeout *int64, end *string) {
+	serverKeyFileBytes := util.ReadBytes(*keyFilePath)
 
 	serverKeyBytes := serverKeyFileBytes[0:util.ServerKeyLen]
 	cryptoKeyBytes := serverKeyFileBytes[util.ServerKeyLen:util.ServerKeyFileLen]

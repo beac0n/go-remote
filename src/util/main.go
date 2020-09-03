@@ -29,11 +29,3 @@ func WriteBytes(filePath string, bytes []byte) {
 	err = file.Close()
 	Check(err, "could not close file "+filePath)
 }
-
-func GetClientKeyFilePath(keyId string) string {
-	return "./" + keyId + "." + ClientSuffix
-}
-
-func GetServerKeyFilePath(keyId string) string {
-	return "./" + keyId + "." + ServerSuffix
-}
