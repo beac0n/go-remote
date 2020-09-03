@@ -49,9 +49,23 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, command *string, t
 func emptyBuffer(con net.PacketConn, bytesLength int) {
 	n := 1
 	buffer := make([]byte, bytesLength)
+
+	err := con.SetReadDeadline(time.Now().Add(time.Second))
+	if err != nil {
+		log.Println("ERROR could not SetReadDeadline:", err)
+		return
+	}
+
 	for n > 0 {
-		n, _, _ = con.ReadFrom(buffer)
-		log.Println(n)
+		n, _, err = con.ReadFrom(buffer)
+		if err != nil {
+			break
+		}
+	}
+
+	err = con.SetReadDeadline(time.Time{})
+	if err != nil {
+		log.Println("ERROR could not SetReadDeadline to zero:", err)
 	}
 }
 
