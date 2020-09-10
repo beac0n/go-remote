@@ -55,20 +55,20 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(*commandTimeout) * time.Second)
 			executeCommand(commandEnd)
-			emptyBuffer(packetConnection, util.EncryptedDataLen)
+			emptyBuffer(packetConnection)
 		}
 	}
 }
 
-func emptyBuffer(con net.PacketConn, bytesLength int) {
-	n := 1
-	buffer := make([]byte, bytesLength)
-
+func emptyBuffer(con net.PacketConn) {
 	err := con.SetReadDeadline(time.Now().Add(time.Second))
 	if err != nil {
 		log.Println("ERROR could not SetReadDeadline:", err)
 		return
 	}
+
+	n := 1
+	buffer := make([]byte, util.EncryptedDataLen)
 
 	for n > 0 {
 		n, _, err = con.ReadFrom(buffer)
