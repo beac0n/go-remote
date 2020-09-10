@@ -29,8 +29,8 @@ func run(doGenKey *bool, keyfilePath *string, address *string) {
 	if *doGenKey {
 		genKeyPair()
 	} else if *keyfilePath != "" && *address != "" {
-		dataToSend := getDataToSend(keyfilePath)
-		sendData(address, dataToSend)
+		dataToSend, publicKeyBytes := getDataToSend(keyfilePath)
+		sendData(address, dataToSend, publicKeyBytes)
 	} else {
 		log.Fatal("no valid client flag combination. " +
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id', 'address'")
@@ -58,7 +58,7 @@ func genKeyPair() {
 	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
 }
 
-func getDataToSend(keyFilePath *string) []byte {
+func getDataToSend(keyFilePath *string) ([]byte, []byte) {
 	publicKeyBytes := util.ReadBytes(*keyFilePath)
 
 	dataBytes := append(util.GetTimestampBytes(), util.GenRandomBytes(util.SaltLen)...)
@@ -67,14 +67,14 @@ func getDataToSend(keyFilePath *string) []byte {
 		os.Exit(1)
 	}
 
-	return encryptedData
+	return encryptedData, publicKeyBytes
 }
 
-func sendData(address *string, dataToSend []byte) {
+func sendData(address *string, dataToSend []byte, publicKeyBytes []byte) {
 	resolvedAddress, err := net.ResolveUDPAddr("udp", *address)
 	util.Check(err, "could not resolve address")
 
-	connection, err := net.DialUDP("udp", nil, resolvedAddress)
+	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: util.GetClientSourcePort(publicKeyBytes)}, resolvedAddress)
 	util.Check(err, "could not connect to udp server")
 
 	_, err = io.Copy(connection, bytes.NewReader(dataToSend))

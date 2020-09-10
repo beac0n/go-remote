@@ -37,3 +37,7 @@ func GetTimestampBytes() []byte {
 	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))
 	return timestampBytes
 }
+
+func GetClientSourcePort(publicKeyBytes []byte) int {
+	return int(binary.LittleEndian.Uint16(publicKeyBytes))
+}

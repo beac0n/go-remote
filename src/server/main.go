@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/x509"
 	"encoding/binary"
 	"flag"
 	"go-remote/src/util"
@@ -29,6 +30,11 @@ func main() {
 
 func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
 	privateKeyBytes := util.ReadBytes(*keyFilePath)
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
+	util.Check(err, "could not parse private key bytes")
+
+	publicKeyBytes := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
+	expectedSourcePort := strconv.Itoa(util.GetClientSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
 
@@ -40,7 +46,16 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		log.Println(address.String() + ": ")
+		addressString := address.String()
+		log.Println(addressString + ": ")
+
+		addressSplit := strings.Split(addressString, ":")
+		sourcePort := addressSplit[len(addressSplit)-1]
+
+		if sourcePort != expectedSourcePort {
+			log.Println("ERROR expected source port " + expectedSourcePort + " but got " + sourcePort)
+			continue
+		}
 
 		if n != util.EncryptedDataLen {
 			log.Println("ERROR received incorrect bytes length")
