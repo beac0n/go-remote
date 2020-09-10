@@ -1,9 +1,10 @@
-package client
+package main
 
 import (
 	"bytes"
 	"crypto/ed25519"
 	"encoding/binary"
+	"flag"
 	"go-remote/src/util"
 	"io"
 	"log"
@@ -13,7 +14,17 @@ import (
 	"time"
 )
 
-func Run(doGenKey *bool, keyfilePath *string, address *string) {
+func main() {
+	keyFilePath := flag.String("key", "", "path to key file")
+	doGenKey := flag.Bool("gen-key", false, "generate key pair")
+	address := flag.String("address", "", "udp address")
+
+	flag.Parse()
+
+	run(doGenKey, keyFilePath, address)
+}
+
+func run(doGenKey *bool, keyfilePath *string, address *string) {
 	if *doGenKey {
 		genKeyPair()
 	} else if *keyfilePath != "" && *address != "" {

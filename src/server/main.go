@@ -1,9 +1,10 @@
-package server
+package main
 
 import (
 	"bytes"
 	"crypto/ed25519"
 	"encoding/binary"
+	"flag"
 	"go-remote/src/util"
 	"io/ioutil"
 	"log"
@@ -14,7 +15,20 @@ import (
 	"time"
 )
 
-func Run(port *string, keyFilePath *string, timeFrame *int64, command *string, timeout *int64, end *string) {
+func main() {
+	keyFilePath := flag.String("key", "", "path to key file")
+	port := flag.String("port", "8080", "udp port")
+	timeFrame := flag.Int64("timeframe", int64(5), "timestamp in request must not be older than this timeframe (in seconds)")
+	commandStart := flag.String("command-start", "echo 'start!'", "the command to execute before the command timeout")
+	commandTimeout := flag.Int64("command-timeout", int64(60), "how long to wait before executing the end command")
+	commandEnd := flag.String("command-end", "echo 'end!'", "the command to execute after the command timeout")
+
+	flag.Parse()
+
+	run(port, keyFilePath, timeFrame, commandStart, commandTimeout, commandEnd)
+}
+
+func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
 	serverKeyFileBytes := util.ReadBytes(*keyFilePath)
 
 	serverKeyBytes := serverKeyFileBytes[0:util.ServerKeyLen]
@@ -38,9 +52,9 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, command *string, t
 		}
 
 		if validateIncomingData(encryptedBytes, serverKeyBytes, cryptoKeyBytes, timeFrame) {
-			executeCommand(command)
-			time.Sleep(time.Duration(*timeout) * time.Second)
-			executeCommand(end)
+			executeCommand(commandStart)
+			time.Sleep(time.Duration(*commandTimeout) * time.Second)
+			executeCommand(commandEnd)
 			emptyBuffer(packetConnection, util.EncryptedDataLen)
 		}
 	}
