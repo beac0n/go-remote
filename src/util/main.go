@@ -39,5 +39,10 @@ func GetTimestampBytes() []byte {
 }
 
 func GetClientSourcePort(publicKeyBytes []byte) int {
-	return int(binary.LittleEndian.Uint16(publicKeyBytes))
+	sourcePort := int(binary.LittleEndian.Uint16(publicKeyBytes))
+	if sourcePort < 1024 {
+		return 1024
+	}
+
+	return sourcePort
 }
