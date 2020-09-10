@@ -2,8 +2,9 @@ package main
 
 import (
 	"bytes"
-	"crypto/ed25519"
-	"encoding/binary"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"flag"
 	"go-remote/src/util"
 	"io"
@@ -38,38 +39,30 @@ func run(doGenKey *bool, keyfilePath *string, address *string) {
 }
 
 func genKeyPair() {
-	serverKey, clientKey, err := ed25519.GenerateKey(nil)
-	util.Check(err, "could not generate key pair")
-
 	nanoSecString := strconv.FormatInt(time.Now().UnixNano(), 10)
 
-	cryptoKey := util.GenRandomBytes(util.CryptoKeyLen)
+	privateKey, err := rsa.GenerateKey(rand.Reader, util.KeySize)
+	util.Check(err, "could not generate private key")
 
-	filePathServerKey := "./" + nanoSecString + "." + util.ServerSuffix
-	util.WriteBytes(filePathServerKey, append(serverKey, cryptoKey...))
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	publicKeyBytes := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
 
-	filePathClientKey := "./" + nanoSecString + "." + util.ClientSuffix
-	util.WriteBytes(filePathClientKey, append(clientKey, cryptoKey...))
+	filePathPrefix := "./" + nanoSecString + "."
+
+	filePathClientKey := filePathPrefix + util.ClientSuffix
+	util.WriteBytes(filePathClientKey, publicKeyBytes)
+
+	filePathServerKey := filePathPrefix + util.ServerSuffix
+	util.WriteBytes(filePathServerKey, privateKeyBytes)
 
 	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
 }
 
 func getDataToSend(keyFilePath *string) []byte {
-	keyFileBytes := util.ReadBytes(*keyFilePath)
+	publicKeyBytes := util.ReadBytes(*keyFilePath)
 
-	timestampBytes := make([]byte, util.TimestampLen)
-	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))
-
-	saltBytes := util.GenRandomBytes(util.SaltLen)
-
-	timestampBytesAndSaltBytes := append(timestampBytes, saltBytes...)
-	clientKeyBytes := keyFileBytes[0:util.ClientKeyLen]
-
-	signatureBytes := ed25519.Sign(clientKeyBytes, timestampBytesAndSaltBytes)
-	dataBytes := append(timestampBytesAndSaltBytes, signatureBytes...)
-
-	cryptoKeyBytes := keyFileBytes[util.ClientKeyLen:util.ClientKeyFileLen]
-	encryptedData, success := util.EncryptData(cryptoKeyBytes, dataBytes)
+	dataBytes := append(util.GetTimestampBytes(), util.GenRandomBytes(util.SaltLen)...)
+	encryptedData, success := util.EncryptData(publicKeyBytes, dataBytes)
 	if !success {
 		os.Exit(1)
 	}

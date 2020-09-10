@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"encoding/binary"
 	"flag"
 	"go-remote/src/util"
@@ -29,10 +28,7 @@ func main() {
 }
 
 func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
-	serverKeyFileBytes := util.ReadBytes(*keyFilePath)
-
-	serverKeyBytes := serverKeyFileBytes[0:util.ServerKeyLen]
-	cryptoKeyBytes := serverKeyFileBytes[util.ServerKeyLen:util.ServerKeyFileLen]
+	privateKeyBytes := util.ReadBytes(*keyFilePath)
 
 	packetConnection := setupPacketConnection(port)
 
@@ -51,13 +47,21 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		if validateIncomingData(encryptedBytes, serverKeyBytes, cryptoKeyBytes, timeFrame) {
+		if validateIncomingData(encryptedBytes, privateKeyBytes, timeFrame) {
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(*commandTimeout) * time.Second)
 			executeCommand(commandEnd)
 			emptyBuffer(packetConnection)
 		}
 	}
+}
+
+func init() {
+	_, err := ioutil.ReadFile(util.FilePathTimestamp)
+	if err != nil {
+		util.WriteBytes(util.FilePathTimestamp, util.GetTimestampBytes())
+	}
+
 }
 
 func emptyBuffer(con net.PacketConn) {
@@ -93,15 +97,9 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes []byte, serverKey []byte, cryptoKeyBytes []byte, timeFrame *int64) bool {
-	dataBytes, success := util.DecryptData(cryptoKeyBytes, encryptedBytes)
+func validateIncomingData(encryptedBytes []byte, privateKeyBytes []byte, timeFrame *int64) bool {
+	dataBytes, success := util.DecryptData(privateKeyBytes, encryptedBytes)
 	if !success {
-		return false
-	}
-
-	messageBytes, signatureBytes := dataBytes[:util.MsgLen], dataBytes[util.MsgLen:util.DataLen]
-	if !ed25519.Verify(serverKey, messageBytes, signatureBytes) {
-		log.Println("ERROR got invalid signature")
 		return false
 	}
 

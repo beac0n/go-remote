@@ -1,13 +1,13 @@
 package util
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"log"
 )
 
-func GenRandomBytes(length int) [] byte {
+func GenRandomBytes(length int) []byte {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	Check(err, "could not create random bytes")
@@ -15,55 +15,34 @@ func GenRandomBytes(length int) [] byte {
 	return bytes
 }
 
-func EncryptData(keyBytes []byte, dataBytes []byte) ([]byte, bool) {
-	blockCipher, err := aes.NewCipher(keyBytes)
+func EncryptData(publicKeyBytes []byte, dataBytes []byte) ([]byte, bool) {
+	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
 	if err != nil {
-		log.Println("could not create cipher")
+		log.Println("could not parse public key bytes", err)
 		return nil, false
 	}
 
-	gcm, err := cipher.NewGCM(blockCipher)
+	encryptedBytes, err := rsa.EncryptOAEP(HashFunction.New(), rand.Reader, publicKey, dataBytes, []byte(""))
 	if err != nil {
-		log.Println("could not create GCM")
+		log.Println("could not encrypt data bytes", err)
 		return nil, false
 	}
 
-	nonceBytes := make([]byte, gcm.NonceSize())
-	_, err = rand.Read(nonceBytes)
-	if err != nil {
-		log.Println("could not randomly generate bytes for nonce")
-		return nil, false
-	}
-
-	return gcm.Seal(nonceBytes, nonceBytes, dataBytes, nil), true
+	return encryptedBytes, true
 }
 
-func DecryptData(cryptoKeyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
-	blockCipher, err := aes.NewCipher(cryptoKeyBytes)
+func DecryptData(privateKeyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
 	if err != nil {
-		log.Println("could not create cipher")
+		log.Println("could not parse private key bytes", err)
 		return nil, false
 	}
 
-	gcm, err := cipher.NewGCM(blockCipher)
+	dataBytes, err := rsa.DecryptOAEP(HashFunction.New(), rand.Reader, privateKey, encryptedBytes, []byte(""))
 	if err != nil {
-		log.Println("could not create GCM")
-		return nil, false
-	}
-
-	nonceSize := gcm.NonceSize()
-	if len(encryptedBytes) < nonceSize {
-		log.Println("data does not match nonce size")
-		return nil, false
-	}
-
-	nonceBytes, ciphertextBytes := encryptedBytes[:nonceSize], encryptedBytes[nonceSize:]
-	dataBytes, err := gcm.Open(nil, nonceBytes, ciphertextBytes, nil)
-	if err != nil {
-		log.Println("could not decrypt")
+		log.Println("could not decrypt encrypted bytes", err)
 		return nil, false
 	}
 
 	return dataBytes, true
 }
-

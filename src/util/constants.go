@@ -1,20 +1,15 @@
 package util
 
-const ServerKeyLen = 32
-const ClientKeyLen = 64
-const CryptoKeyLen = 32
+import _ "golang.org/x/crypto/sha3"
+import "crypto"
 
-const ServerKeyFileLen = ServerKeyLen + CryptoKeyLen
-const ClientKeyFileLen = ClientKeyLen + CryptoKeyLen
+const KeySize = 4096
+const HashFunction = crypto.SHA3_512
 
 const TimestampLen = 8
-const SaltLen = 56
-const MsgLen = TimestampLen + SaltLen
+const SaltLen = 374
 
-const SigLen = 64
-const DataLen = SigLen + MsgLen
-
-const EncryptedDataLen = 156
+const EncryptedDataLen = 512
 
 const FilePathTimestamp = "./.timestamp"
 const ServerSuffix = "server"
