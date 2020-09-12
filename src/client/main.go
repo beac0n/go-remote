@@ -32,7 +32,7 @@ func run(doGenKey *bool, keyfilePath *string, address *string) {
 		sendData(address, keyfilePath)
 	} else {
 		log.Fatal("no valid client flag combination. " +
-			"Please provide either 'gen-key' to create a keypair or provide 'key-id', 'address'")
+			"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address'")
 	}
 
 }
@@ -56,7 +56,26 @@ func genKeyPair() {
 	filePathServerKey := filePathPrefix + util.ServerSuffix
 	util.WriteBytes(filePathServerKey, append(aesKeyBytes, publicKeyBytes...))
 
-	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
+	log.Println("Wrote key pair to " + filePathServerKey + " and " + filePathClientKey)
+}
+
+func sendData(address, keyFilePath *string) {
+	keyFileBytes := util.ReadBytes(*keyFilePath)
+	dataToSend := getDataToSend(keyFileBytes)
+
+	resolvedAddress, err := net.ResolveUDPAddr("udp", *address)
+	util.Check(err, "could not resolve address")
+
+	publicKeyBytes := util.GetPublicKeyBytesFromPrivateKeyBytes(keyFileBytes[util.AesKeySize:])
+
+	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: util.GetSourcePort(publicKeyBytes)}, resolvedAddress)
+	util.Check(err, "could not connect to udp server")
+
+	_, err = io.Copy(connection, bytes.NewReader(dataToSend))
+	util.Check(err, "could not send bytes to udp server")
+
+	err = connection.Close()
+	util.Check(err, "could not close udp connection")
 }
 
 func getDataToSend(keyFileBytes []byte) []byte {
@@ -73,23 +92,4 @@ func getDataToSend(keyFileBytes []byte) []byte {
 	}
 
 	return encryptedData
-}
-
-func sendData(address, keyFilePath *string) {
-	keyFileBytes := util.ReadBytes(*keyFilePath)
-	dataToSend := getDataToSend(keyFileBytes)
-
-	resolvedAddress, err := net.ResolveUDPAddr("udp", *address)
-	util.Check(err, "could not resolve address")
-
-	publicKeyBytes := util.GetPublicKeyBytesFromPrivateKeyBytes(keyFileBytes[util.AesKeySize:])
-
-	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: util.GetClientSourcePort(publicKeyBytes)}, resolvedAddress)
-	util.Check(err, "could not connect to udp server")
-
-	_, err = io.Copy(connection, bytes.NewReader(dataToSend))
-	util.Check(err, "could not send bytes to udp server")
-
-	err = connection.Close()
-	util.Check(err, "could not close udp connection")
 }

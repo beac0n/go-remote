@@ -38,7 +38,7 @@ func GetTimestampNowBytes() []byte {
 	return timestampBytes
 }
 
-func GetClientSourcePort(publicKeyBytes []byte) int {
+func GetSourcePort(publicKeyBytes []byte) int {
 	sourcePort := int(binary.LittleEndian.Uint16(publicKeyBytes))
 	if sourcePort < 1024 {
 		return 1024

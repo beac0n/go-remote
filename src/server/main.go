@@ -33,7 +33,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	publicKeyBytes := keyFileBytes[util.AesKeySize:]
 
-	expectedSourcePort := strconv.Itoa(util.GetClientSourcePort(publicKeyBytes))
+	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
 	for {
