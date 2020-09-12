@@ -39,7 +39,7 @@ func run(doGenKey *bool, keyfilePath *string, address *string) {
 func genKeyPair() {
 	nanoSecString := strconv.FormatInt(time.Now().UnixNano(), 10)
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, util.KeySize)
+	privateKey, err := rsa.GenerateKey(rand.Reader, util.RsaKeySize)
 	util.Check(err, "could not generate private key")
 
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
