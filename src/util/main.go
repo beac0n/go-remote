@@ -16,7 +16,7 @@ func Check(err error, reason string) {
 		os.Exit(1)
 	}
 
-	log.Fatal("ERROR ", reason, err)
+	log.Fatal("ERROR ", reason, ": ", err)
 }
 
 func ReadBytes(filePath string) []byte {
