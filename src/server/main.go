@@ -32,16 +32,15 @@ func main() {
 
 func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
 	keyFileBytes := util.ReadBytes(*keyFilePath)
-
 	publicKeyBytes := keyFileBytes[util.AesKeySize:]
+	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 
+	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
 	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
 	util.Check(err, "could not parse public key bytes")
 
-	aead, err := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
+	aead, err := util.GetAesGcmAEAD(aesKeyBytes)
 	util.Check(err, "could not parse aes key bytes")
-
-	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
 	for {
