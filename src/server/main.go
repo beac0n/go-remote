@@ -120,8 +120,8 @@ func setupPacketConnection(port *string) net.PacketConn {
 }
 
 func validateIncomingData(encryptedBytes []byte, aead cipher.AEAD, publicKey *rsa.PublicKey, timeFrame *int64) bool {
-	dataBytes, success := util.DecryptData(aead, encryptedBytes)
-	if !success {
+	dataBytes, err := util.DecryptData(aead, encryptedBytes)
+	if err != nil {
 		return false
 	}
 

@@ -10,7 +10,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"strconv"
 	"time"
 )
@@ -84,18 +83,14 @@ func getDataToSend(keyFileBytes []byte) []byte {
 	privateKey, err := x509.ParsePKCS1PrivateKey(keyFileBytes[util.AesKeySize:])
 	util.Check(err, "could not parse private key bytes")
 
-	signedDataBytes, success := util.SignData(privateKey, dataBytes)
-	if !success {
-		os.Exit(1)
-	}
+	signedDataBytes, err := util.SignData(privateKey, dataBytes)
+	util.Check(err, "")
 
 	aead, err := util.GetAesGcmEAD(keyFileBytes[0:util.AesKeySize])
 	util.Check(err, "")
 
-	encryptedData, success := util.EncryptData(aead, append(dataBytes, signedDataBytes...))
-	if !success {
-		os.Exit(1)
-	}
+	encryptedData, err := util.EncryptData(aead, append(dataBytes, signedDataBytes...))
+	util.Check(err, "")
 
 	return encryptedData
 }

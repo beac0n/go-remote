@@ -30,7 +30,7 @@ func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes
 	return true
 }
 
-func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, bool) {
+func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, error) {
 	hash := HashFunction.New()
 	hash.Write(dataBytes)
 
@@ -38,31 +38,31 @@ func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, bool) {
 	signature, err := rsa.SignPSS(rand.Reader, privateKey, HashFunction, hash.Sum(nil), &options)
 	if err != nil {
 		log.Println("could not sign data", err)
-		return nil, false
+		return nil, err
 	}
 
-	return signature, true
+	return signature, nil
 }
 
-func EncryptData(aead cipher.AEAD, dataBytes []byte) ([]byte, bool) {
+func EncryptData(aead cipher.AEAD, dataBytes []byte) ([]byte, error) {
 	nonce := make([]byte, aead.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
 		log.Println("could not fill nonce", err)
-		return nil, false
+		return nil, err
 	}
 
-	return aead.Seal(nonce, nonce, dataBytes, nil), true
+	return aead.Seal(nonce, nonce, dataBytes, nil), nil
 }
 
-func DecryptData(aead cipher.AEAD, encryptedBytes []byte) ([]byte, bool) {
+func DecryptData(aead cipher.AEAD, encryptedBytes []byte) ([]byte, error) {
 	nonceSize := aead.NonceSize()
 	decryptedBytes, err := aead.Open(nil, encryptedBytes[0:nonceSize], encryptedBytes[nonceSize:], nil)
 	if err != nil {
 		log.Println("could not decrypt data:", err)
-		return nil, false
+		return nil, err
 	}
 
-	return decryptedBytes, true
+	return decryptedBytes, nil
 
 }
 
