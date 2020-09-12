@@ -82,17 +82,17 @@ func getDataToSend(keyFileBytes []byte) []byte {
 	dataBytes := append(util.GetTimestampNowBytes(), util.GenRandomBytes(util.SaltLen)...)
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(keyFileBytes[util.AesKeySize:])
-	if err != nil {
-		log.Println("could not parse private key bytes", err)
-		os.Exit(1)
-	}
+	util.Check(err, "could not parse private key bytes")
 
 	signedDataBytes, success := util.SignData(privateKey, dataBytes)
 	if !success {
 		os.Exit(1)
 	}
 
-	encryptedData, success := util.EncryptData(keyFileBytes[0:util.AesKeySize], append(dataBytes, signedDataBytes...))
+	aead, err := util.GetAesGcmEAD(keyFileBytes[0:util.AesKeySize])
+	util.Check(err, "")
+
+	encryptedData, success := util.EncryptData(aead, append(dataBytes, signedDataBytes...))
 	if !success {
 		os.Exit(1)
 	}

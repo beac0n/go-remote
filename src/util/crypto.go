@@ -44,29 +44,19 @@ func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, bool) {
 	return signature, true
 }
 
-func EncryptData(keyBytes []byte, dataBytes []byte) ([]byte, bool) {
-	gcm, success := getGCM(keyBytes)
-	if !success {
-		return nil, false
-	}
-
-	nonce := make([]byte, gcm.NonceSize())
+func EncryptData(aead cipher.AEAD, dataBytes []byte) ([]byte, bool) {
+	nonce := make([]byte, aead.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
 		log.Println("could not fill nonce", err)
 		return nil, false
 	}
 
-	return gcm.Seal(nonce, nonce, dataBytes, nil), true
+	return aead.Seal(nonce, nonce, dataBytes, nil), true
 }
 
-func DecryptData(keyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
-	gcm, success := getGCM(keyBytes)
-	if !success {
-		return nil, false
-	}
-
-	nonceSize := gcm.NonceSize()
-	decryptedBytes, err := gcm.Open(nil, encryptedBytes[0:nonceSize], encryptedBytes[nonceSize:], nil)
+func DecryptData(aead cipher.AEAD, encryptedBytes []byte) ([]byte, bool) {
+	nonceSize := aead.NonceSize()
+	decryptedBytes, err := aead.Open(nil, encryptedBytes[0:nonceSize], encryptedBytes[nonceSize:], nil)
 	if err != nil {
 		log.Println("could not decrypt data:", err)
 		return nil, false
@@ -76,25 +66,25 @@ func DecryptData(keyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
 
 }
 
-func GetPublicKeyBytesFromPrivateKeyBytes(privateKeyBytes []byte) []byte {
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
-	Check(err, "could not parse private key bytes")
-
-	return x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
-}
-
-func getGCM(keyBytes []byte) (cipher.AEAD, bool) {
+func GetAesGcmEAD(keyBytes []byte) (cipher.AEAD, error) {
 	c, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		log.Println("could not generate cipher", err)
-		return nil, false
+		return nil, err
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
 		log.Println("could not generate gcm", err)
-		return nil, false
+		return nil, err
 	}
 
-	return gcm, true
+	return gcm, nil
+}
+
+func GetPublicKeyBytesFromPrivateKeyBytes(privateKeyBytes []byte) []byte {
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
+	Check(err, "could not parse private key bytes")
+
+	return x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
 }

@@ -9,9 +9,14 @@ import (
 )
 
 func Check(err error, reason string) {
-	if err != nil {
-		log.Fatal("ERROR ", reason, err)
+	if err == nil {
+		return
 	}
+	if reason == "" {
+		os.Exit(1)
+	}
+
+	log.Fatal("ERROR ", reason, err)
 }
 
 func ReadBytes(filePath string) []byte {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/cipher"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/binary"
@@ -38,6 +39,9 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
 	util.Check(err, "could not parse public key bytes")
 
+	aead, err := util.GetAesGcmEAD(aesKeyBytes)
+	util.Check(err, "could not parse aes key bytes")
+
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
@@ -65,7 +69,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		if validateIncomingData(encryptedBytes, aesKeyBytes, publicKey, timeFrame) {
+		if validateIncomingData(encryptedBytes, aead, publicKey, timeFrame) {
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(*commandTimeout) * time.Second)
 			executeCommand(commandEnd)
@@ -115,8 +119,8 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes, aesKeyBytes []byte, publicKey *rsa.PublicKey, timeFrame *int64) bool {
-	dataBytes, success := util.DecryptData(aesKeyBytes, encryptedBytes)
+func validateIncomingData(encryptedBytes []byte, aead cipher.AEAD, publicKey *rsa.PublicKey, timeFrame *int64) bool {
+	dataBytes, success := util.DecryptData(aead, encryptedBytes)
 	if !success {
 		return false
 	}
