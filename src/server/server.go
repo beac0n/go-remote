@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/binary"
-	"flag"
 	"go-remote/src/util"
 	"io/ioutil"
 	"log"
@@ -17,20 +16,7 @@ import (
 	"time"
 )
 
-func main() {
-	keyFilePath := flag.String("key", "", "path to key file")
-	port := flag.String("port", "8080", "udp port")
-	timeFrame := flag.Int64("timeframe", int64(5), "timestamp in request must not be older than this timeframe (in seconds)")
-	commandStart := flag.String("command-start", "echo 'start!'", "the command to execute before the command timeout")
-	commandTimeout := flag.Int64("command-timeout", int64(60), "how long to wait before executing the end command")
-	commandEnd := flag.String("command-end", "echo 'end!'", "the command to execute after the command timeout")
-
-	flag.Parse()
-
-	run(port, keyFilePath, timeFrame, commandStart, commandTimeout, commandEnd)
-}
-
-func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
+func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
 	keyFileBytes := util.ReadBytes(*keyFilePath)
 	publicKeyBytes := keyFileBytes[util.AesKeySize:]
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
