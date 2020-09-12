@@ -45,35 +45,57 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 
 	packetConnection := setupPacketConnection(port)
 	for {
-		encryptedBytes := make([]byte, util.EncryptedDataLen)
-		n, address, err := packetConnection.ReadFrom(encryptedBytes)
-		if err != nil {
-			log.Println("ERROR could not read packet from connection:", err)
-			continue
-		}
+		processIncomingData(
+			packetConnection,
+			expectedSourcePort,
+			aead,
+			publicKey,
+			timeFrame,
+			commandStart,
+			commandTimeout,
+			commandEnd,
+		)
+	}
+}
 
-		addressString := address.String()
-		log.Println(addressString + ": ")
+func processIncomingData(
+	packetConnection net.PacketConn,
+	expectedSourcePort string,
+	aead cipher.AEAD,
+	publicKey *rsa.PublicKey,
+	timeFrame *int64,
+	commandStart *string,
+	commandTimeout *int64,
+	commandEnd *string,
+) {
+	encryptedBytes := make([]byte, util.EncryptedDataLen)
+	n, address, err := packetConnection.ReadFrom(encryptedBytes)
+	if err != nil {
+		log.Println("ERROR could not read packet from connection:", err)
+		return
+	}
 
-		addressSplit := strings.Split(addressString, ":")
-		sourcePort := addressSplit[len(addressSplit)-1]
+	addressString := address.String()
+	log.Println(addressString + ": ")
 
-		if sourcePort != expectedSourcePort {
-			log.Println("ERROR expected source port " + expectedSourcePort + " but got " + sourcePort)
-			continue
-		}
+	addressSplit := strings.Split(addressString, ":")
+	sourcePort := addressSplit[len(addressSplit)-1]
 
-		if n != util.EncryptedDataLen {
-			log.Println("ERROR received incorrect bytes length")
-			continue
-		}
+	if sourcePort != expectedSourcePort {
+		log.Println("ERROR expected source port " + expectedSourcePort + " but got " + sourcePort)
+		return
+	}
 
-		if validateIncomingData(encryptedBytes, aead, publicKey, timeFrame) {
-			executeCommand(commandStart)
-			time.Sleep(time.Duration(*commandTimeout) * time.Second)
-			executeCommand(commandEnd)
-			emptyBuffer(packetConnection)
-		}
+	if n != util.EncryptedDataLen {
+		log.Println("ERROR received incorrect bytes length")
+		return
+	}
+
+	if validateIncomingData(encryptedBytes, aead, publicKey, timeFrame) {
+		executeCommand(commandStart)
+		time.Sleep(time.Duration(*commandTimeout) * time.Second)
+		executeCommand(commandEnd)
+		emptyBuffer(packetConnection)
 	}
 }
 
