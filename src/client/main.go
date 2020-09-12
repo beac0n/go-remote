@@ -81,7 +81,13 @@ func sendData(address, keyFilePath *string) {
 func getDataToSend(keyFileBytes []byte) []byte {
 	dataBytes := append(util.GetTimestampNowBytes(), util.GenRandomBytes(util.SaltLen)...)
 
-	signedDataBytes, success := util.SignData(keyFileBytes[util.AesKeySize:], dataBytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(keyFileBytes[util.AesKeySize:])
+	if err != nil {
+		log.Println("could not parse private key bytes", err)
+		os.Exit(1)
+	}
+
+	signedDataBytes, success := util.SignData(privateKey, dataBytes)
 	if !success {
 		os.Exit(1)
 	}

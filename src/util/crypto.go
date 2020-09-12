@@ -17,18 +17,12 @@ func GenRandomBytes(length int) []byte {
 	return bytes
 }
 
-func VerifySignedData(publicKeyBytes []byte, dataBytes []byte, signatureBytes []byte) bool {
-	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
-	if err != nil {
-		log.Println("could not parse public key bytes", err)
-		return false
-	}
-
+func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes []byte) bool {
 	hash := HashFunction.New()
 	hash.Write(dataBytes)
 
 	options := rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
-	if err = rsa.VerifyPSS(publicKey, HashFunction, hash.Sum(nil), signatureBytes, &options); err != nil {
+	if err := rsa.VerifyPSS(publicKey, HashFunction, hash.Sum(nil), signatureBytes, &options); err != nil {
 		log.Println("could not verify signature", err)
 		return false
 	}
@@ -36,13 +30,7 @@ func VerifySignedData(publicKeyBytes []byte, dataBytes []byte, signatureBytes []
 	return true
 }
 
-func SignData(privateKeyBytes []byte, dataBytes []byte) ([]byte, bool) {
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
-	if err != nil {
-		log.Println("could not parse private key bytes", err)
-		return nil, false
-	}
-
+func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, bool) {
 	hash := HashFunction.New()
 	hash.Write(dataBytes)
 

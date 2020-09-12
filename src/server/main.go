@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/binary"
 	"flag"
 	"go-remote/src/util"
@@ -33,6 +35,9 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	publicKeyBytes := keyFileBytes[util.AesKeySize:]
 
+	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
+	util.Check(err, "could not parse public key bytes")
+
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
@@ -60,7 +65,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		if validateIncomingData(encryptedBytes, aesKeyBytes, publicKeyBytes, timeFrame) {
+		if validateIncomingData(encryptedBytes, aesKeyBytes, publicKey, timeFrame) {
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(*commandTimeout) * time.Second)
 			executeCommand(commandEnd)
@@ -110,13 +115,13 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes, aesKeyBytes, publicKeyBytes []byte, timeFrame *int64) bool {
+func validateIncomingData(encryptedBytes, aesKeyBytes []byte, publicKey *rsa.PublicKey, timeFrame *int64) bool {
 	dataBytes, success := util.DecryptData(aesKeyBytes, encryptedBytes)
 	if !success {
 		return false
 	}
 
-	if !util.VerifySignedData(publicKeyBytes, dataBytes[0:util.TotalDataLen], dataBytes[util.TotalDataLen:]) {
+	if !util.VerifySignedData(publicKey, dataBytes[0:util.TotalDataLen], dataBytes[util.TotalDataLen:]) {
 		return false
 	}
 
