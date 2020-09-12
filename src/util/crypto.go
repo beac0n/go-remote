@@ -66,7 +66,7 @@ func DecryptData(aead cipher.AEAD, encryptedBytes []byte) ([]byte, error) {
 
 }
 
-func GetAesGcmEAD(keyBytes []byte) (cipher.AEAD, error) {
+func GetAesGcmAEAD(keyBytes []byte) (cipher.AEAD, error) {
 	c, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		log.Println("could not generate cipher", err)

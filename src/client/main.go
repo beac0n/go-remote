@@ -86,7 +86,7 @@ func getDataToSend(keyFileBytes []byte) []byte {
 	signedDataBytes, err := util.SignData(privateKey, dataBytes)
 	util.Check(err, "")
 
-	aead, err := util.GetAesGcmEAD(keyFileBytes[0:util.AesKeySize])
+	aead, err := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
 	util.Check(err, "")
 
 	encryptedData, err := util.EncryptData(aead, append(dataBytes, signedDataBytes...))

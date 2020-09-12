@@ -39,7 +39,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
 	util.Check(err, "could not parse public key bytes")
 
-	aead, err := util.GetAesGcmEAD(aesKeyBytes)
+	aead, err := util.GetAesGcmAEAD(aesKeyBytes)
 	util.Check(err, "could not parse aes key bytes")
 
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
