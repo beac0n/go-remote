@@ -32,7 +32,7 @@ func WriteBytes(filePath string, bytes []byte) {
 	Check(err, "could not close file "+filePath)
 }
 
-func GetTimestampBytes() []byte {
+func GetTimestampNowBytes() []byte {
 	timestampBytes := make([]byte, TimestampLen)
 	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))
 	return timestampBytes

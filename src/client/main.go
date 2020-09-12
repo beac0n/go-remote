@@ -29,8 +29,7 @@ func run(doGenKey *bool, keyfilePath *string, address *string) {
 	if *doGenKey {
 		genKeyPair()
 	} else if *keyfilePath != "" && *address != "" {
-		dataToSend, publicKeyBytes := getDataToSend(keyfilePath)
-		sendData(address, dataToSend, publicKeyBytes)
+		sendData(address, keyfilePath)
 	} else {
 		log.Fatal("no valid client flag combination. " +
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id', 'address'")
@@ -47,32 +46,43 @@ func genKeyPair() {
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
 	publicKeyBytes := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
 
+	aesKeyBytes := util.GenRandomBytes(util.AesKeySize)
+
 	filePathPrefix := "./" + nanoSecString + "."
 
 	filePathClientKey := filePathPrefix + util.ClientSuffix
-	util.WriteBytes(filePathClientKey, publicKeyBytes)
+	util.WriteBytes(filePathClientKey, append(aesKeyBytes, privateKeyBytes...))
 
 	filePathServerKey := filePathPrefix + util.ServerSuffix
-	util.WriteBytes(filePathServerKey, privateKeyBytes)
+	util.WriteBytes(filePathServerKey, append(aesKeyBytes, publicKeyBytes...))
 
 	log.Println("Written key pair to " + filePathServerKey + " and " + filePathClientKey)
 }
 
-func getDataToSend(keyFilePath *string) ([]byte, []byte) {
-	publicKeyBytes := util.ReadBytes(*keyFilePath)
+func getDataToSend(keyFileBytes []byte) []byte {
+	dataBytes := append(util.GetTimestampNowBytes(), util.GenRandomBytes(util.SaltLen)...)
 
-	dataBytes := append(util.GetTimestampBytes(), util.GenRandomBytes(util.SaltLen)...)
-	encryptedData, success := util.EncryptData(publicKeyBytes, dataBytes)
+	signedDataBytes, success := util.SignData(keyFileBytes[util.AesKeySize:], dataBytes)
 	if !success {
 		os.Exit(1)
 	}
 
-	return encryptedData, publicKeyBytes
+	encryptedData, success := util.EncryptData(keyFileBytes[0:util.AesKeySize], append(dataBytes, signedDataBytes...))
+	if !success {
+		os.Exit(1)
+	}
+
+	return encryptedData
 }
 
-func sendData(address *string, dataToSend []byte, publicKeyBytes []byte) {
+func sendData(address, keyFilePath *string) {
+	keyFileBytes := util.ReadBytes(*keyFilePath)
+	dataToSend := getDataToSend(keyFileBytes)
+
 	resolvedAddress, err := net.ResolveUDPAddr("udp", *address)
 	util.Check(err, "could not resolve address")
+
+	publicKeyBytes := util.GetPublicKeyBytesFromPrivateKeyBytes(keyFileBytes[util.AesKeySize:])
 
 	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: util.GetClientSourcePort(publicKeyBytes)}, resolvedAddress)
 	util.Check(err, "could not connect to udp server")

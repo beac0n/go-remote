@@ -1,6 +1,8 @@
 package util
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -15,34 +17,96 @@ func GenRandomBytes(length int) []byte {
 	return bytes
 }
 
-func EncryptData(publicKeyBytes []byte, dataBytes []byte) ([]byte, bool) {
+func VerifySignedData(publicKeyBytes []byte, dataBytes []byte, signatureBytes []byte) bool {
 	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
 	if err != nil {
 		log.Println("could not parse public key bytes", err)
-		return nil, false
+		return false
 	}
 
-	encryptedBytes, err := rsa.EncryptOAEP(HashFunction.New(), rand.Reader, publicKey, dataBytes, []byte(""))
-	if err != nil {
-		log.Println("could not encrypt data bytes", err)
-		return nil, false
+	hash := HashFunction.New()
+	hash.Write(dataBytes)
+
+	options := rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
+	if err = rsa.VerifyPSS(publicKey, HashFunction, hash.Sum(nil), signatureBytes, &options); err != nil {
+		log.Println("could not verify signature", err)
+		return false
 	}
 
-	return encryptedBytes, true
+	return true
 }
 
-func DecryptData(privateKeyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
+func SignData(privateKeyBytes []byte, dataBytes []byte) ([]byte, bool) {
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
 	if err != nil {
 		log.Println("could not parse private key bytes", err)
 		return nil, false
 	}
 
-	dataBytes, err := rsa.DecryptOAEP(HashFunction.New(), rand.Reader, privateKey, encryptedBytes, []byte(""))
+	hash := HashFunction.New()
+	hash.Write(dataBytes)
+
+	options := rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
+	signature, err := rsa.SignPSS(rand.Reader, privateKey, HashFunction, hash.Sum(nil), &options)
 	if err != nil {
-		log.Println("could not decrypt encrypted bytes", err)
+		log.Println("could not sign data", err)
 		return nil, false
 	}
 
-	return dataBytes, true
+	return signature, true
+}
+
+func EncryptData(keyBytes []byte, dataBytes []byte) ([]byte, bool) {
+	gcm, success := getGCM(keyBytes)
+	if !success {
+		return nil, false
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		log.Println("could not fill nonce", err)
+		return nil, false
+	}
+
+	return gcm.Seal(nonce, nonce, dataBytes, nil), true
+}
+
+func DecryptData(keyBytes []byte, encryptedBytes []byte) ([]byte, bool) {
+	gcm, success := getGCM(keyBytes)
+	if !success {
+		return nil, false
+	}
+
+	nonceSize := gcm.NonceSize()
+	decryptedBytes, err := gcm.Open(nil, encryptedBytes[0:nonceSize], encryptedBytes[nonceSize:], nil)
+	if err != nil {
+		log.Println("could not decrypt data:", err)
+		return nil, false
+	}
+
+	return decryptedBytes, true
+
+}
+
+func GetPublicKeyBytesFromPrivateKeyBytes(privateKeyBytes []byte) []byte {
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
+	Check(err, "could not parse private key bytes")
+
+	return x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
+}
+
+func getGCM(keyBytes []byte) (cipher.AEAD, bool) {
+	c, err := aes.NewCipher(keyBytes)
+	if err != nil {
+		log.Println("could not generate cipher", err)
+		return nil, false
+	}
+
+	gcm, err := cipher.NewGCM(c)
+	if err != nil {
+		log.Println("could not generate gcm", err)
+		return nil, false
+	}
+
+	return gcm, true
 }

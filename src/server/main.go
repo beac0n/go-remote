@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/x509"
 	"encoding/binary"
 	"flag"
 	"go-remote/src/util"
@@ -29,15 +28,14 @@ func main() {
 }
 
 func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
-	privateKeyBytes := util.ReadBytes(*keyFilePath)
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
-	util.Check(err, "could not parse private key bytes")
+	keyFileBytes := util.ReadBytes(*keyFilePath)
 
-	publicKeyBytes := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
+	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
+	publicKeyBytes := keyFileBytes[util.AesKeySize:]
+
 	expectedSourcePort := strconv.Itoa(util.GetClientSourcePort(publicKeyBytes))
 
 	packetConnection := setupPacketConnection(port)
-
 	for {
 		encryptedBytes := make([]byte, util.EncryptedDataLen)
 		n, address, err := packetConnection.ReadFrom(encryptedBytes)
@@ -62,7 +60,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		if validateIncomingData(encryptedBytes, privateKeyBytes, timeFrame) {
+		if validateIncomingData(encryptedBytes, aesKeyBytes, publicKeyBytes, timeFrame) {
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(*commandTimeout) * time.Second)
 			executeCommand(commandEnd)
@@ -74,7 +72,7 @@ func run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 func init() {
 	_, err := ioutil.ReadFile(util.FilePathTimestamp)
 	if err != nil {
-		util.WriteBytes(util.FilePathTimestamp, util.GetTimestampBytes())
+		util.WriteBytes(util.FilePathTimestamp, util.GetTimestampNowBytes())
 	}
 
 }
@@ -112,9 +110,13 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes []byte, privateKeyBytes []byte, timeFrame *int64) bool {
-	dataBytes, success := util.DecryptData(privateKeyBytes, encryptedBytes)
+func validateIncomingData(encryptedBytes, aesKeyBytes, publicKeyBytes []byte, timeFrame *int64) bool {
+	dataBytes, success := util.DecryptData(aesKeyBytes, encryptedBytes)
 	if !success {
+		return false
+	}
+
+	if !util.VerifySignedData(publicKeyBytes, dataBytes[0:util.TotalDataLen], dataBytes[util.TotalDataLen:]) {
 		return false
 	}
 
