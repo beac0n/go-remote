@@ -29,12 +29,6 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 	aeadKey, err := util.GetAesGcmAEAD(aesKeyBytes)
 	util.Check(err, "could not parse aes key bytes")
 
-	aeadBinaryFirst, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesFirst())
-	util.Check(err, "could not parse first binary hash key bytes")
-
-	aeadBinarySecond, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesSecond())
-	util.Check(err, "could not parse second binary hash key bytes")
-
 	packetConnection := setupPacketConnection(port)
 	for {
 		encryptedBytes := make([]byte, util.EncryptedDataLen+1)
@@ -59,6 +53,12 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			log.Println("ERROR received invalid bytes length. Expected", util.EncryptedDataLen, "got", n)
 			continue
 		}
+
+		aeadBinaryFirst, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesFirst())
+		util.Check(err, "could not parse first binary hash key bytes")
+
+		aeadBinarySecond, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesSecond())
+		util.Check(err, "could not parse second binary hash key bytes")
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, aeadBinaryFirst, aeadBinarySecond, publicKey, timeFrame) {
 			executeCommand(commandStart)
