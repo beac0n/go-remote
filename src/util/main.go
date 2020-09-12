@@ -51,3 +51,20 @@ func GetSourcePort(publicKeyBytes []byte) int {
 
 	return sourcePort
 }
+
+func GetBinaryHashKeyBytesFirst() []byte {
+	return getBinaryHashKeyBytes()[0:AesKeySize]
+}
+
+func GetBinaryHashKeyBytesSecond() []byte {
+	return getBinaryHashKeyBytes()[AesKeySize : AesKeySize+AesKeySize]
+}
+
+func getBinaryHashKeyBytes() []byte {
+	executablePath, err := os.Executable()
+	Check(err, "can't get executable path of binary")
+
+	executableBytes := ReadBytes(executablePath)
+	hashBytes := GetHashFromBytes(executableBytes)
+	return hashBytes
+}

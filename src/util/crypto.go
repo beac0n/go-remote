@@ -17,12 +17,16 @@ func GenRandomBytes(length int) []byte {
 	return bytes
 }
 
-func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes []byte) bool {
+func GetHashFromBytes(dataBytes []byte) []byte {
 	hash := HashFunction.New()
 	hash.Write(dataBytes)
+	return hash.Sum(nil)
+}
 
-	options := rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
-	if err := rsa.VerifyPSS(publicKey, HashFunction, hash.Sum(nil), signatureBytes, &options); err != nil {
+var pssOptions = rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
+
+func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes []byte) bool {
+	if err := rsa.VerifyPSS(publicKey, HashFunction, GetHashFromBytes(dataBytes), signatureBytes, &pssOptions); err != nil {
 		log.Println("could not verify signature", err)
 		return false
 	}
@@ -31,11 +35,7 @@ func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes
 }
 
 func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, error) {
-	hash := HashFunction.New()
-	hash.Write(dataBytes)
-
-	options := rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
-	signature, err := rsa.SignPSS(rand.Reader, privateKey, HashFunction, hash.Sum(nil), &options)
+	signature, err := rsa.SignPSS(rand.Reader, privateKey, HashFunction, GetHashFromBytes(dataBytes), &pssOptions)
 	if err != nil {
 		log.Println("could not sign data", err)
 		return nil, err

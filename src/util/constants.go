@@ -9,10 +9,10 @@ const RsaKeySize = 4096
 const HashFunction = crypto.SHA3_512
 
 const TimestampLen = 8
-const SaltLen = 1016
+const SaltLen = 2040
 const TotalDataLen = TimestampLen + SaltLen
 
-const EncryptedDataLen = 1564
+const EncryptedDataLen = 2644
 
 const FilePathTimestamp = "./.timestamp"
 const ServerSuffix = "server"
