@@ -11,19 +11,19 @@ make build
 ```
 
 ## run
-application can be run in either client mode (`-client`) or server mode (`-server`)
+application can be run in either client mode or server mode (`-server`)
 
 ### client mode
 
 #### flags
 - `-gen-key` generate server/client key files
-
 - `-address` udp address with port of remote upd server
 - `-key` path to client key file
 
 ### server mode
 
 #### flags
+- `-server` needed to indicate server mode
 - `-port` port on which to run udp server, default: 8080
 - `-timeframe` timestamp sent by client must be between `now - timeframe` and `now`, default: 5 seconds
 - `-command-start` the command to execute if udp packet sent by client is valid, default: echo "start!"
