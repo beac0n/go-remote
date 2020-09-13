@@ -71,9 +71,9 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 }
 
 func initTimestampFile() {
-	_, err := util.ReadFileWithMaxSize(util.FilePathTimestamp)
+	_, err := util.ReadTimestampFile()
 	if err != nil {
-		util.WriteBytes(util.FilePathTimestamp, util.GetTimestampNowBytes())
+		util.WriteTimestampFile(util.GetTimestampNowBytes())
 	}
 
 }
@@ -122,7 +122,7 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 
 	isValid := withinTimeFrame && currentTsGreaterLastTs
 	if isValid {
-		util.WriteBytes(util.FilePathTimestamp, tsNanoBytes)
+		util.WriteTimestampFile(tsNanoBytes)
 	} else if !withinTimeFrame {
 		log.Println("ERROR got invalid timestamp.\n" +
 			"Expected " + tsNanoStr + " (" + time.Unix(tsNanoInt/util.SecInNs, 0).String() + ")\n" +
@@ -137,7 +137,7 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 }
 
 func isCurrentTsGreaterLastTs(timestampInt int64) bool {
-	lastTimestamp, err := util.ReadFileWithMaxSize(util.FilePathTimestamp)
+	lastTimestamp, err := util.ReadTimestampFile()
 	util.Check(err, "could not read timestamp file")
 
 	now := time.Now().UnixNano()

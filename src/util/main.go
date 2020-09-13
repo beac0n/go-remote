@@ -18,7 +18,25 @@ func Check(err error, reason string) {
 		os.Exit(1)
 	}
 
-	log.Fatal("ERROR ", reason, ": ", err)
+	log.Fatal("ERROR: ", reason, ": ", err)
+}
+
+func WriteTimestampFile(timestampBytes []byte) {
+	WriteBytes(FilePathTimestamp, timestampBytes)
+}
+
+func ReadTimestampFile() ([]byte, error) {
+	fileInfo, err := os.Stat(FilePathTimestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	fileSize := fileInfo.Size()
+	if fileSize != 8 {
+		log.Fatal("ERROR: ", FilePathTimestamp, " should be exactly 8 bytes long, but was ", fileSize)
+	}
+
+	return ioutil.ReadFile(FilePathTimestamp)
 }
 
 func ReadFileWithMaxSize(filePath string) ([]byte, error) {
@@ -44,7 +62,7 @@ func ReadBytes(filePath string) []byte {
 	maxFileSizeMb := float64(3)
 	fileSize := float64(fileInfo.Size()) / 1000 / 1000
 	if fileSize > maxFileSizeMb {
-		log.Fatal("expected file size to not be bigger than ", maxFileSizeMb, " MB but was ", fileSize, " MB")
+		log.Fatal("ERROR: expected file size to not be bigger than ", maxFileSizeMb, " MB but was ", fileSize, " MB")
 	}
 
 	fileBytes, err := ReadFileWithMaxSize(filePath)

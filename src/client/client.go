@@ -19,7 +19,7 @@ func Run(doGenKey *bool, keyfilePath *string, address *string) {
 	} else if *keyfilePath != "" && *address != "" {
 		sendData(address, keyfilePath)
 	} else {
-		log.Fatal("no valid client flag combination. " +
+		log.Fatal("ERROR: no valid client flag combination. " +
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address'")
 	}
 
