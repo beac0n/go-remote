@@ -137,15 +137,17 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 }
 
 func isCurrentTsGreaterLastTs(timestampInt int64) bool {
-	isCurrentTsGreaterLastTs := true
 	lastTimestamp, err := util.ReadFileWithMaxSize(util.FilePathTimestamp)
-	if err == nil {
-		lastTimestampInt := int64(binary.LittleEndian.Uint64(lastTimestamp))
-		isCurrentTsGreaterLastTs = timestampInt > lastTimestampInt
-	} else {
-		log.Println("WARN: could not read timestamp file:", err)
+	util.Check(err, "could not read timestamp file")
+
+	now := time.Now().UnixNano()
+	lastTimestampInt := int64(binary.LittleEndian.Uint64(lastTimestamp))
+
+	if lastTimestampInt >= now {
+		log.Fatal("ERROR: last timestamp must be smaller than now")
 	}
-	return isCurrentTsGreaterLastTs
+
+	return timestampInt > lastTimestampInt
 }
 
 func executeCommand(command *string) {
