@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/binary"
 	"go-remote/src/util"
-	"io/ioutil"
 	"log"
 	"net"
 	"os/exec"
@@ -54,10 +53,12 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 			continue
 		}
 
-		aeadBinaryFirst, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesFirst())
+		binaryHashKeyBytes := util.GetBinaryHashKeyBytes()
+
+		aeadBinaryFirst, err := util.GetAesGcmAEAD(binaryHashKeyBytes[0:util.AesKeySize])
 		util.Check(err, "could not parse first binary hash key bytes")
 
-		aeadBinarySecond, err := util.GetAesGcmAEAD(util.GetBinaryHashKeyBytesSecond())
+		aeadBinarySecond, err := util.GetAesGcmAEAD(binaryHashKeyBytes[util.AesKeySize : util.AesKeySize+util.AesKeySize])
 		util.Check(err, "could not parse second binary hash key bytes")
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, aeadBinaryFirst, aeadBinarySecond, publicKey, timeFrame) {
@@ -70,7 +71,7 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 }
 
 func initTimestampFile() {
-	_, err := ioutil.ReadFile(util.FilePathTimestamp)
+	_, err := util.ReadFileWithMaxSize(util.FilePathTimestamp)
 	if err != nil {
 		util.WriteBytes(util.FilePathTimestamp, util.GetTimestampNowBytes())
 	}
@@ -137,7 +138,7 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 
 func isCurrentTsGreaterLastTs(timestampInt int64) bool {
 	isCurrentTsGreaterLastTs := true
-	lastTimestamp, err := ioutil.ReadFile(util.FilePathTimestamp)
+	lastTimestamp, err := util.ReadFileWithMaxSize(util.FilePathTimestamp)
 	if err == nil {
 		lastTimestampInt := int64(binary.LittleEndian.Uint64(lastTimestamp))
 		isCurrentTsGreaterLastTs = timestampInt > lastTimestampInt

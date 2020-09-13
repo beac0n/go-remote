@@ -2,6 +2,8 @@ package util
 
 import (
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -19,8 +21,33 @@ func Check(err error, reason string) {
 	log.Fatal("ERROR ", reason, ": ", err)
 }
 
+func ReadFileWithMaxSize(filePath string) ([]byte, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileSize := float64(fileInfo.Size()) / 1000 / 1000
+	if fileSize > MaxFileSizeMb {
+		return nil, errors.New("expected file size to not be bigger than " +
+			fmt.Sprintf("%f", MaxFileSizeMb) + " MB but was " +
+			fmt.Sprintf("%f", fileSize) + " MB")
+	}
+
+	return ioutil.ReadFile(filePath)
+}
+
 func ReadBytes(filePath string) []byte {
-	fileBytes, err := ioutil.ReadFile(filePath)
+	fileInfo, err := os.Stat(filePath)
+	Check(err, "could get file stat "+filePath)
+
+	maxFileSizeMb := float64(3)
+	fileSize := float64(fileInfo.Size()) / 1000 / 1000
+	if fileSize > maxFileSizeMb {
+		log.Fatal("expected file size to not be bigger than ", maxFileSizeMb, " MB but was ", fileSize, " MB")
+	}
+
+	fileBytes, err := ReadFileWithMaxSize(filePath)
 	Check(err, "could not read file "+filePath)
 
 	return fileBytes
@@ -52,15 +79,7 @@ func GetSourcePort(publicKeyBytes []byte) int {
 	return sourcePort
 }
 
-func GetBinaryHashKeyBytesFirst() []byte {
-	return getBinaryHashKeyBytes()[0:AesKeySize]
-}
-
-func GetBinaryHashKeyBytesSecond() []byte {
-	return getBinaryHashKeyBytes()[AesKeySize : AesKeySize+AesKeySize]
-}
-
-func getBinaryHashKeyBytes() []byte {
+func GetBinaryHashKeyBytes() []byte {
 	executablePath, err := os.Executable()
 	Check(err, "can't get executable path of binary")
 

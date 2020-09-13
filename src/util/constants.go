@@ -19,3 +19,4 @@ const ServerSuffix = "server"
 const ClientSuffix = "client"
 
 const SecInNs = int64(1000000000)
+const MaxFileSizeMb = float64(5)
