@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -56,13 +57,16 @@ func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, k
 	}
 }
 
+var currentPort = 12345
+
 func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath string) bool) {
 	keyName := client.Run(true, "", "")
 
 	clientFile := "./" + keyName + "." + util.ClientSuffix
 	serverFile := "./" + keyName + "." + util.ServerSuffix
 
-	port := "12345"
+	currentPort += 1
+	port := strconv.Itoa(currentPort)
 
 	quit := make(chan bool)
 	go server.Run(port, serverFile, int64(10), "touch .start", int64(1), "touch .end", quit)
