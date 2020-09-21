@@ -15,12 +15,6 @@ func Assert(t *testing.T, actual interface{}, expected interface{}) {
 	}
 }
 
-func AssertComp(t *testing.T, actual interface{}, expected interface{}, comparision bool) {
-	if !comparision {
-		t.Errorf("actual value was %v, expected %v", actual, expected)
-	}
-}
-
 func TestKeyGen(t *testing.T) {
 	keyName := client.Run(true, "", "")
 
@@ -32,7 +26,9 @@ func TestKeyGen(t *testing.T) {
 	clientFile := "./" + keyName + "." + util.ClientSuffix
 	fileInfo, err = os.Stat(clientFile)
 	Assert(t, err, nil)
-	AssertComp(t, fileInfo.Size(), ">= 2379", fileInfo.Size() >= int64(util.AesKeySize+2347))
+	if fileInfo.Size() < int64(util.AesKeySize+2347) {
+		t.Errorf("actual value was %v, expected %v", fileInfo.Size, ">= 2379")
+	}
 
 	_ = os.Remove(serverFile)
 	_ = os.Remove(clientFile)
