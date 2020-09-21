@@ -44,10 +44,7 @@ func TestReceiveData(t *testing.T) {
 }
 
 func TestReceiveTooLittleData(t *testing.T) {
-	dataToSend := make([]byte, 1)
-	dataToSend[0] = 99
-
-	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+	testReceiveData(t, sendDataGenerator([]byte{99}, -1))
 }
 
 func TestReceiveTooLittleCloseData(t *testing.T) {
