@@ -48,30 +48,15 @@ func TestReceiveTooLittleData(t *testing.T) {
 }
 
 func TestReceiveTooLittleCloseData(t *testing.T) {
-	dataToSend := make([]byte, util.EncryptedDataLen-1)
-	for i := 0; i < util.EncryptedDataLen-1; i++ {
-		dataToSend[i] = 99
-	}
-
-	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+	testReceiveData(t, sendDataGenerator(make([]byte, util.EncryptedDataLen-1), -1))
 }
 
 func TestReceiveTooMuchData(t *testing.T) {
-	dataToSend := make([]byte, util.EncryptedDataLen+1)
-	for i := 0; i < util.EncryptedDataLen+1; i++ {
-		dataToSend[i] = 99
-	}
-
-	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+	testReceiveData(t, sendDataGenerator(make([]byte, util.EncryptedDataLen+1), -1))
 }
 
 func TestReceiveWrongData(t *testing.T) {
-	dataToSend := make([]byte, util.EncryptedDataLen)
-	for i := 0; i < util.EncryptedDataLen; i++ {
-		dataToSend[i] = 99
-	}
-
-	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+	testReceiveData(t, sendDataGenerator(make([]byte, util.EncryptedDataLen), -1))
 }
 
 func TestReceiveDataWrongSourcePort(t *testing.T) {
