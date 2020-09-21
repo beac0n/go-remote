@@ -6,6 +6,8 @@ If the UDP packet contains the correct data, the server will execute the configu
 
 ## build
 
+Make sure to use the exact same binary on client and server side.
+
 ```
 make build
 ```
