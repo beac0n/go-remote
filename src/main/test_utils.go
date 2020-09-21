@@ -30,7 +30,7 @@ func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, k
 		keyFileBytes := util.ReadBytes(keyFilePath)
 		usedDataToSend := client.GetDataToSend(keyFileBytes)
 
-		if len(dataToSend) > 0 {
+		if dataToSend != nil {
 			usedDataToSend = dataToSend
 		}
 

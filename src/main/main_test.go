@@ -78,5 +78,5 @@ func TestReceiveWrongData(t *testing.T) {
 }
 
 func TestReceiveDataWrongSourcePort(t *testing.T) {
-	testReceiveData(t, sendDataGenerator(make([]byte, 0), 5555))
+	testReceiveData(t, sendDataGenerator(nil, 5555))
 }
