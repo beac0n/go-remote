@@ -75,15 +75,15 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 }
 
 func quit(quit chan bool) bool {
-	if quit != nil {
-		select {
-		case <-quit:
-			return true
-		default:
-			return false
-		}
+	if quit == nil {
+		return false
 	}
-	return false
+	select {
+	case <-quit:
+		return true
+	default:
+		return false
+	}
 }
 
 func initTimestampFile() {
