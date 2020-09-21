@@ -2,30 +2,22 @@ package main
 
 import (
 	"go-remote/src/client"
-	"go-remote/src/server"
 	"go-remote/src/util"
 	"os"
 	"testing"
-	"time"
 )
-
-func Assert(t *testing.T, actual interface{}, expected interface{}) {
-	if actual != expected {
-		t.Errorf("actual value was %v, expected %v", actual, expected)
-	}
-}
 
 func TestKeyGen(t *testing.T) {
 	keyName := client.Run(true, "", "")
 
 	serverFile := "./" + keyName + "." + util.ServerSuffix
 	fileInfo, err := os.Stat(serverFile)
-	Assert(t, err, nil)
-	Assert(t, fileInfo.Size(), int64(util.AesKeySize+526))
+	assertEqual(t, err, nil)
+	assertEqual(t, fileInfo.Size(), int64(util.AesKeySize+526))
 
 	clientFile := "./" + keyName + "." + util.ClientSuffix
 	fileInfo, err = os.Stat(clientFile)
-	Assert(t, err, nil)
+	assertEqual(t, err, nil)
 	if fileInfo.Size() < int64(util.AesKeySize+2347) {
 		t.Errorf("actual value was %v, expected %v", fileInfo.Size(), ">= 2379")
 	}
@@ -38,41 +30,53 @@ func TestSendData(t *testing.T) {
 	keyName := client.Run(true, "", "")
 	clientFile := "./" + keyName + "." + util.ClientSuffix
 	result := client.Run(false, clientFile, "127.0.0.1:8080")
-	Assert(t, len(result), util.EncryptedDataLen)
+	assertEqual(t, len(result), util.EncryptedDataLen)
 
 	_ = os.Remove("./" + keyName + "." + util.ServerSuffix)
 	_ = os.Remove(clientFile)
 }
 
 func TestReceiveData(t *testing.T) {
-	keyName := client.Run(true, "", "")
+	testReceiveData(t, func(address string, keyFilePath string) bool {
+		client.Run(false, keyFilePath, address)
+		return true
+	})
+}
 
-	clientFile := "./" + keyName + "." + util.ClientSuffix
-	serverFile := "./" + keyName + "." + util.ServerSuffix
+func TestReceiveTooLittleData(t *testing.T) {
+	dataToSend := make([]byte, 1)
+	dataToSend[0] = 99
 
-	port := "12345"
+	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+}
 
-	quit := make(chan bool)
-	go server.Run(port, serverFile, int64(10), "touch .start", int64(1), "touch .end", quit)
+func TestReceiveTooLittleCloseData(t *testing.T) {
+	dataToSend := make([]byte, util.EncryptedDataLen-1)
+	for i := 0; i < util.EncryptedDataLen-1; i++ {
+		dataToSend[i] = 99
+	}
 
-	time.Sleep(time.Second)
+	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+}
 
-	client.Run(false, clientFile, "127.0.0.1:"+port)
+func TestReceiveTooMuchData(t *testing.T) {
+	dataToSend := make([]byte, util.EncryptedDataLen+1)
+	for i := 0; i < util.EncryptedDataLen+1; i++ {
+		dataToSend[i] = 99
+	}
 
-	quit <- true
+	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+}
 
-	startFile := "./.start"
-	endFile := "./.end"
+func TestReceiveWrongData(t *testing.T) {
+	dataToSend := make([]byte, util.EncryptedDataLen)
+	for i := 0; i < util.EncryptedDataLen; i++ {
+		dataToSend[i] = 99
+	}
 
-	_, err := os.Stat(startFile)
-	Assert(t, err, nil)
+	testReceiveData(t, sendDataGenerator(dataToSend, -1))
+}
 
-	_, err = os.Stat(endFile)
-	Assert(t, err, nil)
-
-	_ = os.Remove(clientFile)
-	_ = os.Remove(serverFile)
-	_ = os.Remove("./.timestamp")
-	_ = os.Remove(startFile)
-	_ = os.Remove(endFile)
+func TestReceiveDataWrongSourcePort(t *testing.T) {
+	testReceiveData(t, sendDataGenerator(make([]byte, 0), 5555))
 }

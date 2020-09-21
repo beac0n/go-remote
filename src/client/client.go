@@ -52,7 +52,7 @@ func genKeyPair() string {
 
 func sendData(address, keyFilePath string) string {
 	keyFileBytes := util.ReadBytes(keyFilePath)
-	dataToSend := getDataToSend(keyFileBytes)
+	dataToSend := GetDataToSend(keyFileBytes)
 
 	resolvedAddress, err := net.ResolveUDPAddr("udp", address)
 	util.Check(err, "could not resolve address")
@@ -71,7 +71,7 @@ func sendData(address, keyFilePath string) string {
 	return string(dataToSend)
 }
 
-func getDataToSend(keyFileBytes []byte) []byte {
+func GetDataToSend(keyFileBytes []byte) []byte {
 	dataBytes := append(util.GetTimestampNowBytes(), util.GenRandomBytes(util.SaltLen)...)
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(keyFileBytes[util.AesKeySize:])
