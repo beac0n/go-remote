@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quit chan bool) {
+func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quitChan chan bool) {
 	initTimestampFile()
 
 	keyFileBytes := util.ReadBytes(keyFilePath)
@@ -30,10 +30,8 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 
 	packetConnection := setupPacketConnection(port)
 	for {
-		select {
-		case <-quit:
+		if quit(quitChan) {
 			return
-		default:
 		}
 
 		encryptedBytes := make([]byte, util.EncryptedDataLen+1)
@@ -74,6 +72,18 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 			emptyBuffer(packetConnection)
 		}
 	}
+}
+
+func quit(quit chan bool) bool {
+	if quit != nil {
+		select {
+		case <-quit:
+			return true
+		default:
+			return false
+		}
+	}
+	return false
 }
 
 func initTimestampFile() {

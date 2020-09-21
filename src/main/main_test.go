@@ -27,7 +27,7 @@ func TestKeyGen(t *testing.T) {
 	fileInfo, err = os.Stat(clientFile)
 	Assert(t, err, nil)
 	if fileInfo.Size() < int64(util.AesKeySize+2347) {
-		t.Errorf("actual value was %v, expected %v", fileInfo.Size, ">= 2379")
+		t.Errorf("actual value was %v, expected %v", fileInfo.Size(), ">= 2379")
 	}
 
 	_ = os.Remove(serverFile)

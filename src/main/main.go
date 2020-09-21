@@ -24,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	if *isServer {
-		server.Run(*port, *keyFilePath, *timeFrame, *commandStart, *commandTimeout, *commandEnd, make(chan bool))
+		server.Run(*port, *keyFilePath, *timeFrame, *commandStart, *commandTimeout, *commandEnd, nil)
 	} else {
 		client.Run(*doGenKey, *keyFilePath, *address)
 	}
