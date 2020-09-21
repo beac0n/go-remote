@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,39 +38,30 @@ func ReadTimestampFile() ([]byte, error) {
 	return ioutil.ReadFile(FilePathTimestamp)
 }
 
-func ReadFileWithMaxSize(filePath string) ([]byte, error) {
+func ReadBytes(filePath string) []byte {
 	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		return nil, err
-	}
+	Check(err, "could not read file"+filePath)
 
 	fileSize := float64(fileInfo.Size()) / 1000 / 1000
 	if fileSize > MaxFileSizeMb {
-		return nil, errors.New("expected file size to not be bigger than " +
+		log.Fatal("expected file size to not be bigger than " +
 			fmt.Sprintf("%f", MaxFileSizeMb) + " MB but was " +
 			fmt.Sprintf("%f", fileSize) + " MB")
 	}
 
-	return ioutil.ReadFile(filePath)
-}
-
-func ReadBytes(filePath string) []byte {
-	fileInfo, err := os.Stat(filePath)
-	Check(err, "could get file stat "+filePath)
-
-	maxFileSizeMb := float64(3)
-	fileSize := float64(fileInfo.Size()) / 1000 / 1000
-	if fileSize > maxFileSizeMb {
-		log.Fatal("ERROR: expected file size to not be bigger than ", maxFileSizeMb, " MB but was ", fileSize, " MB")
-	}
-
-	fileBytes, err := ReadFileWithMaxSize(filePath)
-	Check(err, "could not read file "+filePath)
+	fileBytes, err := ioutil.ReadFile(filePath)
+	Check(err, "could not read file bytes"+filePath)
 
 	return fileBytes
 }
 
 func WriteBytes(filePath string, bytes []byte) {
+	if fileSize := float64(len(bytes) / 1000 / 1000); fileSize > MaxFileSizeMb {
+		log.Fatal("expected file size to not be bigger than " +
+			fmt.Sprintf("%f", MaxFileSizeMb) + " MB but was " +
+			fmt.Sprintf("%f", fileSize) + " MB")
+	}
+
 	file, err := os.Create(filePath)
 	Check(err, "could not create file "+filePath)
 

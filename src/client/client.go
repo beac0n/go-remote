@@ -13,19 +13,20 @@ import (
 	"time"
 )
 
-func Run(doGenKey *bool, keyfilePath *string, address *string) {
-	if *doGenKey {
-		genKeyPair()
-	} else if *keyfilePath != "" && *address != "" {
-		sendData(address, keyfilePath)
+func Run(doGenKey bool, keyfilePath string, address string) string {
+	if doGenKey {
+		return genKeyPair()
+	} else if keyfilePath != "" && address != "" {
+		return sendData(address, keyfilePath)
 	} else {
 		log.Fatal("ERROR: no valid client flag combination. " +
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address'")
 	}
 
+	return ""
 }
 
-func genKeyPair() {
+func genKeyPair() string {
 	nanoSecString := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, util.RsaKeySize)
@@ -45,13 +46,15 @@ func genKeyPair() {
 	util.WriteBytes(filePathServerKey, append(aesKeyBytes, publicKeyBytes...))
 
 	log.Println("Wrote key pair to " + filePathServerKey + " and " + filePathClientKey)
+
+	return nanoSecString
 }
 
-func sendData(address, keyFilePath *string) {
-	keyFileBytes := util.ReadBytes(*keyFilePath)
+func sendData(address, keyFilePath string) string {
+	keyFileBytes := util.ReadBytes(keyFilePath)
 	dataToSend := getDataToSend(keyFileBytes)
 
-	resolvedAddress, err := net.ResolveUDPAddr("udp", *address)
+	resolvedAddress, err := net.ResolveUDPAddr("udp", address)
 	util.Check(err, "could not resolve address")
 
 	publicKeyBytes := util.GetPublicKeyBytesFromPrivateKeyBytes(keyFileBytes[util.AesKeySize:])
@@ -64,6 +67,8 @@ func sendData(address, keyFilePath *string) {
 
 	err = connection.Close()
 	util.Check(err, "could not close udp connection")
+
+	return string(dataToSend)
 }
 
 func getDataToSend(keyFileBytes []byte) []byte {

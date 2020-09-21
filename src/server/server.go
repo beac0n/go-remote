@@ -15,10 +15,10 @@ import (
 	"time"
 )
 
-func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *string, commandTimeout *int64, commandEnd *string) {
+func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quit chan bool) {
 	initTimestampFile()
 
-	keyFileBytes := util.ReadBytes(*keyFilePath)
+	keyFileBytes := util.ReadBytes(keyFilePath)
 	publicKeyBytes := keyFileBytes[util.AesKeySize:]
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
@@ -30,6 +30,12 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 
 	packetConnection := setupPacketConnection(port)
 	for {
+		select {
+		case <-quit:
+			return
+		default:
+		}
+
 		encryptedBytes := make([]byte, util.EncryptedDataLen+1)
 		n, address, err := packetConnection.ReadFrom(encryptedBytes)
 		if err != nil {
@@ -63,7 +69,7 @@ func Run(port *string, keyFilePath *string, timeFrame *int64, commandStart *stri
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, aeadBinaryFirst, aeadBinarySecond, publicKey, timeFrame) {
 			executeCommand(commandStart)
-			time.Sleep(time.Duration(*commandTimeout) * time.Second)
+			time.Sleep(time.Duration(commandTimeout) * time.Second)
 			executeCommand(commandEnd)
 			emptyBuffer(packetConnection)
 		}
@@ -78,8 +84,8 @@ func initTimestampFile() {
 
 }
 
-func setupPacketConnection(port *string) net.PacketConn {
-	address := "0.0.0.0:" + *port
+func setupPacketConnection(port string) net.PacketConn {
+	address := "0.0.0.0:" + port
 	log.Println("Starting UDP server on " + address)
 
 	packetConnection, err := net.ListenPacket("udp", address)
@@ -88,7 +94,7 @@ func setupPacketConnection(port *string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinaryFirst cipher.AEAD, aeadBinarySecond cipher.AEAD, publicKey *rsa.PublicKey, timeFrame *int64) bool {
+func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinaryFirst cipher.AEAD, aeadBinarySecond cipher.AEAD, publicKey *rsa.PublicKey, timeFrame int64) bool {
 	encryptedBytes, err := util.DecryptData(aeadBinarySecond, encryptedBytes)
 	if err != nil {
 		return false
@@ -113,12 +119,12 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 	nowNanoInt := time.Now().UnixNano()
 	nowNanoStr := strconv.FormatInt(nowNanoInt, 10)
 
-	timeframeNanoSeconds := *timeFrame * util.SecInNs
+	timeframeNanoSeconds := timeFrame * util.SecInNs
 	startTsNano := nowNanoInt - timeframeNanoSeconds
 	startTsNanoStr := strconv.FormatInt(startTsNano, 10)
 
 	withinTimeFrame := startTsNano < tsNanoInt && nowNanoInt > tsNanoInt
-	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(tsNanoInt)
+	currentTsGreaterLastTs := isCurrentTsGreaterLastTs(tsNanoInt, nowNanoInt)
 
 	isValid := withinTimeFrame && currentTsGreaterLastTs
 	if isValid {
@@ -130,19 +136,18 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, aeadBinary
 			"and " + nowNanoStr + " (" + time.Unix(nowNanoInt/util.SecInNs, 0).String() + ")")
 	} else if !currentTsGreaterLastTs {
 		log.Println("ERROR got invalid timestamp. " +
-			"Expected " + tsNanoStr + " to be greater than the last timestamp")
+			"Expected " + tsNanoStr + " (" + time.Unix(tsNanoInt/util.SecInNs, 0).String() +
+			") to be greater than the last timestamp")
 	}
 
 	return isValid
 }
 
-func isCurrentTsGreaterLastTs(timestampInt int64) bool {
+func isCurrentTsGreaterLastTs(timestampInt int64, now int64) bool {
 	lastTimestamp, err := util.ReadTimestampFile()
 	util.Check(err, "could not read timestamp file")
 
-	now := time.Now().UnixNano()
 	lastTimestampInt := int64(binary.LittleEndian.Uint64(lastTimestamp))
-
 	if lastTimestampInt >= now {
 		log.Fatal("ERROR: last timestamp must be smaller than now")
 	}
@@ -150,8 +155,8 @@ func isCurrentTsGreaterLastTs(timestampInt int64) bool {
 	return timestampInt > lastTimestampInt
 }
 
-func executeCommand(command *string) {
-	commandSplit := strings.Split(*command, " ")
+func executeCommand(command string) {
+	commandSplit := strings.Split(command, " ")
 	commandSplitLen := len(commandSplit)
 
 	var cmd *exec.Cmd
@@ -166,7 +171,7 @@ func executeCommand(command *string) {
 	var outBytes bytes.Buffer
 	cmd.Stdout = &outBytes
 
-	log.Println("running command " + *command)
+	log.Println("running command " + command)
 	err := cmd.Run()
 	if err == nil {
 		log.Println(outBytes.String())
