@@ -71,7 +71,7 @@ func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath s
 	quit := make(chan bool)
 	go server.Run(port, serverFile, int64(10), "touch .start", int64(1), "touch .end", quit)
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond)
 
 	success := dataSender("127.0.0.1:"+port, clientFile)
 
