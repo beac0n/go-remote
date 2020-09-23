@@ -19,7 +19,7 @@ func Run(doGenKey bool, keyfilePath string, address string) string {
 	} else if keyfilePath != "" && address != "" {
 		return sendData(address, keyfilePath)
 	} else {
-		log.Fatal("ERROR: no valid client flag combination. " +
+		log.Fatal("ERROR: no valid client flag combination. ",
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address'")
 	}
 
@@ -37,7 +37,7 @@ func genKeyPair() string {
 
 	aesKeyBytes := util.GenRandomBytes(util.AesKeySize)
 
-	filePathPrefix := "./" + nanoSecString + "."
+	filePathPrefix := "./" + nanoSecString
 
 	filePathClientKey := filePathPrefix + util.ClientSuffix
 	util.WriteBytes(filePathClientKey, append(aesKeyBytes, privateKeyBytes...))
@@ -45,7 +45,7 @@ func genKeyPair() string {
 	filePathServerKey := filePathPrefix + util.ServerSuffix
 	util.WriteBytes(filePathServerKey, append(aesKeyBytes, publicKeyBytes...))
 
-	log.Println("Wrote key pair to " + filePathServerKey + " and " + filePathClientKey)
+	log.Println("Wrote key pair to", filePathServerKey, "and", filePathClientKey)
 
 	return nanoSecString
 }
@@ -72,7 +72,7 @@ func sendData(address, keyFilePath string) string {
 }
 
 func GetDataToSend(keyFileBytes []byte) []byte {
-	dataBytes := append(util.GetTimestampNowBytes(), util.GenRandomBytes(util.SaltLen)...)
+	dataBytes := util.GetTimestampNowBytes()
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(keyFileBytes[util.AesKeySize:])
 	util.Check(err, "could not parse private key bytes")
@@ -83,21 +83,7 @@ func GetDataToSend(keyFileBytes []byte) []byte {
 	aeadKey, err := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
 	util.Check(err, "")
 
-	binaryHashKeyBytes := util.GetBinaryHashKeyBytes()
-
-	aeadBinaryFirst, err := util.GetAesGcmAEAD(binaryHashKeyBytes[0:util.AesKeySize])
-	util.Check(err, "")
-
-	aeadBinarySecond, err := util.GetAesGcmAEAD(binaryHashKeyBytes[util.AesKeySize : util.AesKeySize+util.AesKeySize])
-	util.Check(err, "")
-
 	encryptedData, err := util.EncryptData(aeadKey, append(dataBytes, signedDataBytes...))
-	util.Check(err, "")
-
-	encryptedData, err = util.EncryptData(aeadBinaryFirst, encryptedData)
-	util.Check(err, "")
-
-	encryptedData, err = util.EncryptData(aeadBinarySecond, encryptedData)
 	util.Check(err, "")
 
 	return encryptedData

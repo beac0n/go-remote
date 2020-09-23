@@ -62,8 +62,8 @@ var currentPort = 12345
 func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath string) bool) {
 	keyName := client.Run(true, "", "")
 
-	clientFile := "./" + keyName + "." + util.ClientSuffix
-	serverFile := "./" + keyName + "." + util.ServerSuffix
+	clientFile := "./" + keyName + util.ClientSuffix
+	serverFile := "./" + keyName + util.ServerSuffix
 
 	currentPort += 1
 	port := strconv.Itoa(currentPort)

@@ -10,12 +10,12 @@ import (
 func TestKeyGen(t *testing.T) {
 	keyName := client.Run(true, "", "")
 
-	serverFile := "./" + keyName + "." + util.ServerSuffix
+	serverFile := "./" + keyName + util.ServerSuffix
 	fileInfo, err := os.Stat(serverFile)
 	assertEqual(t, err, nil)
 	assertEqual(t, fileInfo.Size(), int64(util.AesKeySize+526))
 
-	clientFile := "./" + keyName + "." + util.ClientSuffix
+	clientFile := "./" + keyName + util.ClientSuffix
 	fileInfo, err = os.Stat(clientFile)
 	assertEqual(t, err, nil)
 	if fileInfo.Size() < int64(util.AesKeySize+2347) {
@@ -28,11 +28,11 @@ func TestKeyGen(t *testing.T) {
 
 func TestSendData(t *testing.T) {
 	keyName := client.Run(true, "", "")
-	clientFile := "./" + keyName + "." + util.ClientSuffix
+	clientFile := "./" + keyName + util.ClientSuffix
 	result := client.Run(false, clientFile, "127.0.0.1:8080")
 	assertEqual(t, len(result), util.EncryptedDataLen)
 
-	_ = os.Remove("./" + keyName + "." + util.ServerSuffix)
+	_ = os.Remove("./" + keyName + util.ServerSuffix)
 	_ = os.Remove(clientFile)
 }
 

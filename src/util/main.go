@@ -2,7 +2,6 @@ package util
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -44,9 +43,7 @@ func ReadBytes(filePath string) []byte {
 
 	fileSize := float64(fileInfo.Size()) / 1000 / 1000
 	if fileSize > MaxFileSizeMb {
-		log.Fatal("expected file size to not be bigger than " +
-			fmt.Sprintf("%f", MaxFileSizeMb) + " MB but was " +
-			fmt.Sprintf("%f", fileSize) + " MB")
+		log.Fatal("expected file size to not be bigger than ", MaxFileSizeMb, " MB but was ", fileSize, " MB")
 	}
 
 	fileBytes, err := ioutil.ReadFile(filePath)
@@ -57,9 +54,7 @@ func ReadBytes(filePath string) []byte {
 
 func WriteBytes(filePath string, bytes []byte) {
 	if fileSize := float64(len(bytes) / 1000 / 1000); fileSize > MaxFileSizeMb {
-		log.Fatal("expected file size to not be bigger than " +
-			fmt.Sprintf("%f", MaxFileSizeMb) + " MB but was " +
-			fmt.Sprintf("%f", fileSize) + " MB")
+		log.Fatal("expected file size to not be bigger than ", MaxFileSizeMb, " MB but was ", fileSize, " MB")
 	}
 
 	file, err := os.Create(filePath)
@@ -87,13 +82,4 @@ func GetSourcePort(publicKeyBytes []byte) int {
 	}
 
 	return sourcePort
-}
-
-func GetBinaryHashKeyBytes() []byte {
-	executablePath, err := os.Executable()
-	Check(err, "can't get executable path of binary")
-
-	executableBytes := ReadBytes(executablePath)
-	hashBytes := GetHashFromBytes(executableBytes)
-	return hashBytes
 }
