@@ -4,8 +4,25 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"io/ioutil"
 	"log"
+	"os"
 )
+
+func ReadKeyBytes(filePath string) []byte {
+	fileInfo, err := os.Stat(filePath)
+	Check(err, "could not read file"+filePath)
+
+	fileSize := fileInfo.Size()
+	if fileSize != AesKeySize {
+		log.Fatal("ERROR: ", filePath, "should be exactly", AesKeySize, "bytes long, but was", fileSize)
+	}
+
+	fileBytes, err := ioutil.ReadFile(filePath)
+	Check(err, "could not read file bytes"+filePath)
+
+	return fileBytes
+}
 
 func GenRandomBytes(length int) []byte {
 	bytes := make([]byte, length)

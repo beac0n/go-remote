@@ -1,11 +1,12 @@
 package util
 
 import (
+	"bytes"
 	"encoding/binary"
-	"io/ioutil"
 	"log"
 	"os"
-	"time"
+	"os/exec"
+	"strings"
 )
 
 func Check(err error, reason string) {
@@ -19,60 +20,6 @@ func Check(err error, reason string) {
 	log.Fatal("ERROR: ", reason, ": ", err)
 }
 
-func WriteTimestampFile(timestampBytes []byte) {
-	WriteBytes(FilePathTimestamp, timestampBytes)
-}
-
-func ReadTimestampFile() ([]byte, error) {
-	fileInfo, err := os.Stat(FilePathTimestamp)
-	if err != nil {
-		return nil, err
-	}
-
-	fileSize := fileInfo.Size()
-	if fileSize != 8 {
-		log.Fatal("ERROR: ", FilePathTimestamp, " should be exactly 8 bytes long, but was ", fileSize)
-	}
-
-	return ioutil.ReadFile(FilePathTimestamp)
-}
-
-func ReadBytes(filePath string) []byte {
-	fileInfo, err := os.Stat(filePath)
-	Check(err, "could not read file"+filePath)
-
-	fileSize := float64(fileInfo.Size()) / 1000 / 1000
-	if fileSize > MaxFileSizeMb {
-		log.Fatal("expected file size to not be bigger than ", MaxFileSizeMb, " MB but was ", fileSize, " MB")
-	}
-
-	fileBytes, err := ioutil.ReadFile(filePath)
-	Check(err, "could not read file bytes"+filePath)
-
-	return fileBytes
-}
-
-func WriteBytes(filePath string, bytes []byte) {
-	if fileSize := float64(len(bytes) / 1000 / 1000); fileSize > MaxFileSizeMb {
-		log.Fatal("expected file size to not be bigger than ", MaxFileSizeMb, " MB but was ", fileSize, " MB")
-	}
-
-	file, err := os.Create(filePath)
-	Check(err, "could not create file "+filePath)
-
-	_, err = file.Write(bytes)
-	Check(err, "could not write to file "+filePath)
-
-	err = file.Close()
-	Check(err, "could not close file "+filePath)
-}
-
-func GetTimestampNowBytes() []byte {
-	timestampBytes := make([]byte, TimestampLen)
-	binary.LittleEndian.PutUint64(timestampBytes, uint64(time.Now().UnixNano()))
-	return timestampBytes
-}
-
 func GetSourcePort(keyBytes []byte) int {
 	hashedPublicKeyBytes := GetHashFromBytes(keyBytes)
 
@@ -82,4 +29,30 @@ func GetSourcePort(keyBytes []byte) int {
 	}
 
 	return sourcePort
+}
+
+func ExecuteCommand(command string) {
+	commandSplit := strings.Split(command, " ")
+	commandSplitLen := len(commandSplit)
+
+	var cmd *exec.Cmd
+	if commandSplitLen == 0 {
+		return
+	} else if commandSplitLen == 1 {
+		cmd = exec.Command(commandSplit[0])
+	} else {
+		cmd = exec.Command(commandSplit[0], commandSplit[1:]...)
+	}
+
+	var stdOutBytes bytes.Buffer
+	var stdErrBytes bytes.Buffer
+	cmd.Stdout = &stdOutBytes
+	cmd.Stderr = &stdErrBytes
+
+	log.Println("running command", command)
+	if err := cmd.Run(); err != nil {
+		log.Println("ERROR when running command:", err)
+	}
+	log.Println("Stdout:", stdOutBytes.String())
+	log.Println("Stderr:", stdErrBytes.String())
 }

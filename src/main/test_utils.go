@@ -27,7 +27,7 @@ func assertNotEqual(t *testing.T, actual interface{}, notExpected interface{}) {
 
 func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, keyFilePath string) bool {
 	return func(address, keyFilePath string) bool {
-		keyFileBytes := util.ReadBytes(keyFilePath)
+		keyFileBytes := util.ReadKeyBytes(keyFilePath)
 		usedDataToSend := client.GetDataToSend(keyFileBytes)
 
 		if dataToSend != nil {

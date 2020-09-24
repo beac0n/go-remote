@@ -1,22 +1,20 @@
 package server
 
 import (
-	"bytes"
 	"crypto/cipher"
 	"encoding/binary"
 	"go-remote/src/util"
 	"log"
 	"net"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
 
 func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quitChan chan bool) {
-	initTimestampFile()
+	util.InitTimestampFile()
 
-	keyFileBytes := util.ReadBytes(keyFilePath)
+	keyFileBytes := util.ReadKeyBytes(keyFilePath)
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(aesKeyBytes))
 
@@ -52,9 +50,9 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 		}
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
-			executeCommand(commandStart)
+			util.ExecuteCommand(commandStart)
 			time.Sleep(time.Duration(commandTimeout) * time.Second)
-			executeCommand(commandEnd)
+			util.ExecuteCommand(commandEnd)
 			emptyBuffer(packetConnection)
 		}
 	}
@@ -70,14 +68,6 @@ func quit(quit chan bool) bool {
 	default:
 		return false
 	}
-}
-
-func initTimestampFile() {
-	_, err := util.ReadTimestampFile()
-	if err != nil {
-		util.WriteTimestampFile(util.GetTimestampNowBytes())
-	}
-
 }
 
 func setupPacketConnection(port string) net.PacketConn {
@@ -132,32 +122,6 @@ func getLastTsNanoInt() int64 {
 	util.Check(err, "could not read timestamp file")
 
 	return int64(binary.LittleEndian.Uint64(lastTimestamp))
-}
-
-func executeCommand(command string) {
-	commandSplit := strings.Split(command, " ")
-	commandSplitLen := len(commandSplit)
-
-	var cmd *exec.Cmd
-	if commandSplitLen == 0 {
-		return
-	} else if commandSplitLen == 1 {
-		cmd = exec.Command(commandSplit[0])
-	} else {
-		cmd = exec.Command(commandSplit[0], commandSplit[1:]...)
-	}
-
-	var stdOutBytes bytes.Buffer
-	var stdErrBytes bytes.Buffer
-	cmd.Stdout = &stdOutBytes
-	cmd.Stderr = &stdErrBytes
-
-	log.Println("running command", command)
-	if err := cmd.Run(); err != nil {
-		log.Println("ERROR when running command:", err)
-	}
-	log.Println("Stdout:", stdOutBytes.String())
-	log.Println("Stderr:", stdErrBytes.String())
 }
 
 func emptyBuffer(con net.PacketConn) {
