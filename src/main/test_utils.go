@@ -37,8 +37,7 @@ func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, k
 		resolvedAddress, err := net.ResolveUDPAddr("udp", address)
 		util.Check(err, "could not resolve address")
 
-		publicKeyBytes := util.GetPublicKeyBytesFromPrivateKeyBytes(keyFileBytes[util.AesKeySize:])
-		usedSourcePort := util.GetSourcePort(publicKeyBytes)
+		usedSourcePort := util.GetSourcePort(keyFileBytes)
 
 		if sourcePort > -1 {
 			usedSourcePort = sourcePort
@@ -62,18 +61,17 @@ var currentPort = 12345
 func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath string) bool) {
 	keyName := client.Run(true, "", "")
 
-	clientFile := "./" + keyName + util.ClientSuffix
-	serverFile := "./" + keyName + util.ServerSuffix
+	keyFile := "./" + keyName + util.KeySuffix
 
 	currentPort += 1
 	port := strconv.Itoa(currentPort)
 
 	quit := make(chan bool)
-	go server.Run(port, serverFile, int64(10), "touch .start", int64(1), "touch .end", quit)
+	go server.Run(port, keyFile, int64(10), "touch .start", int64(1), "touch .end", quit)
 
 	time.Sleep(time.Millisecond)
 
-	success := dataSender("127.0.0.1:"+port, clientFile)
+	success := dataSender("127.0.0.1:"+port, keyFile)
 
 	quit <- true
 
@@ -90,8 +88,7 @@ func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath s
 		assertNotEqual(t, endErr, nil)
 	}
 
-	_ = os.Remove(clientFile)
-	_ = os.Remove(serverFile)
+	_ = os.Remove(keyFile)
 	_ = os.Remove("./.timestamp")
 	_ = os.Remove(startFile)
 	_ = os.Remove(endFile)

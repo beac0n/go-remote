@@ -73,8 +73,8 @@ func GetTimestampNowBytes() []byte {
 	return timestampBytes
 }
 
-func GetSourcePort(publicKeyBytes []byte) int {
-	hashedPublicKeyBytes := GetHashFromBytes(publicKeyBytes)
+func GetSourcePort(keyBytes []byte) int {
+	hashedPublicKeyBytes := GetHashFromBytes(keyBytes)
 
 	sourcePort := int(binary.LittleEndian.Uint16(hashedPublicKeyBytes))
 	if sourcePort < 1024 {

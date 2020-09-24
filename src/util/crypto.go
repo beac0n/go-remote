@@ -4,8 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"log"
 )
 
@@ -21,27 +19,6 @@ func GetHashFromBytes(dataBytes []byte) []byte {
 	hash := HashFunction.New()
 	hash.Write(dataBytes)
 	return hash.Sum(nil)
-}
-
-var pssOptions = rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}
-
-func VerifySignedData(publicKey *rsa.PublicKey, dataBytes []byte, signatureBytes []byte) bool {
-	if err := rsa.VerifyPSS(publicKey, HashFunction, GetHashFromBytes(dataBytes), signatureBytes, &pssOptions); err != nil {
-		log.Println("could not verify signature", err)
-		return false
-	}
-
-	return true
-}
-
-func SignData(privateKey *rsa.PrivateKey, dataBytes []byte) ([]byte, error) {
-	signature, err := rsa.SignPSS(rand.Reader, privateKey, HashFunction, GetHashFromBytes(dataBytes), &pssOptions)
-	if err != nil {
-		log.Println("could not sign data", err)
-		return nil, err
-	}
-
-	return signature, nil
 }
 
 func EncryptData(aead cipher.AEAD, dataBytes []byte) ([]byte, error) {
@@ -80,11 +57,4 @@ func GetAesGcmAEAD(keyBytes []byte) (cipher.AEAD, error) {
 	}
 
 	return gcm, nil
-}
-
-func GetPublicKeyBytesFromPrivateKeyBytes(privateKeyBytes []byte) []byte {
-	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
-	Check(err, "could not parse private key bytes")
-
-	return x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
 }

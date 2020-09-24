@@ -3,8 +3,6 @@ package server
 import (
 	"bytes"
 	"crypto/cipher"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/binary"
 	"go-remote/src/util"
 	"log"
@@ -19,11 +17,8 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 	initTimestampFile()
 
 	keyFileBytes := util.ReadBytes(keyFilePath)
-	publicKeyBytes := keyFileBytes[util.AesKeySize:]
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
-	expectedSourcePort := strconv.Itoa(util.GetSourcePort(publicKeyBytes))
-	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyBytes)
-	util.Check(err, "could not parse public key bytes")
+	expectedSourcePort := strconv.Itoa(util.GetSourcePort(aesKeyBytes))
 
 	aeadKey, err := util.GetAesGcmAEAD(aesKeyBytes)
 	util.Check(err, "could not parse aes key bytes")
@@ -56,7 +51,7 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 			continue
 		}
 
-		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, publicKey, timeFrame) {
+		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
 			executeCommand(commandStart)
 			time.Sleep(time.Duration(commandTimeout) * time.Second)
 			executeCommand(commandEnd)
@@ -95,13 +90,9 @@ func setupPacketConnection(port string) net.PacketConn {
 	return packetConnection
 }
 
-func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, publicKey *rsa.PublicKey, timeFrame int64) bool {
+func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, timeFrame int64) bool {
 	dataBytes, err := util.DecryptData(aeadKey, encryptedBytes)
 	if err != nil {
-		return false
-	}
-
-	if !util.VerifySignedData(publicKey, dataBytes[0:util.TimestampLen], dataBytes[util.TimestampLen:]) {
 		return false
 	}
 
