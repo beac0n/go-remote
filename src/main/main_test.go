@@ -17,7 +17,8 @@ func TestInvalidClientParams(t *testing.T) {
 	}).Unpatch()
 
 	client.Run(false, "", "")
-	assertEqual(t, loggedValue, "[ERROR: no valid client flag combination.  Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address']")
+	assertEqual(t, loggedValue, "[ERROR: no valid client flag combination.  "+
+		"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address']")
 }
 
 func TestKeyGen(t *testing.T) {
