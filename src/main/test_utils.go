@@ -25,7 +25,7 @@ func assertNotEqual(t *testing.T, actual interface{}, notExpected interface{}) {
 	}
 }
 
-func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, keyFilePath string) bool {
+func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(address string, keyFilePath string) bool {
 	return func(address, keyFilePath string) bool {
 		keyFileBytes := util.ReadKeyBytes(keyFilePath)
 		usedDataToSend := client.GetDataToSend(keyFileBytes)
@@ -42,6 +42,8 @@ func sendDataGenerator(dataToSend []byte, sourcePort int) func(address string, k
 		if sourcePort > -1 {
 			usedSourcePort = sourcePort
 		}
+
+		time.Sleep(time.Duration(waitTime) * time.Second)
 
 		connection, err := net.DialUDP("udp", &net.UDPAddr{Port: usedSourcePort}, resolvedAddress)
 		util.Check(err, "could not connect to udp server")
@@ -67,7 +69,7 @@ func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath s
 	port := strconv.Itoa(currentPort)
 
 	quit := make(chan bool)
-	go server.Run(port, keyFile, int64(10), "touch .start", int64(1), "touch .end", quit)
+	go server.Run(port, keyFile, int64(1), "touch .start", int64(1), "touch .end", quit)
 
 	time.Sleep(time.Millisecond)
 
