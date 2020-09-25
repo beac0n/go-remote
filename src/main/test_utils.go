@@ -9,9 +9,16 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
+
+func assertStartsWith(t *testing.T, actual, expected string) {
+	if !strings.HasPrefix(actual, expected) {
+		t.Errorf("expected actual value %v to start with %v", actual, expected)
+	}
+}
 
 func assertEqual(t *testing.T, actual interface{}, expected interface{}) {
 	if actual != expected {
