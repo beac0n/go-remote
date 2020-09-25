@@ -38,14 +38,12 @@ func GetHashFromBytes(dataBytes []byte) []byte {
 	return hash.Sum(nil)
 }
 
-func EncryptData(aead cipher.AEAD, dataBytes []byte) ([]byte, error) {
+func EncryptData(aead cipher.AEAD, dataBytes []byte) []byte {
 	nonce := make([]byte, aead.NonceSize())
-	if _, err := rand.Read(nonce); err != nil {
-		log.Println("could not fill nonce", err)
-		return nil, err
-	}
+	_, err := rand.Read(nonce)
+	Check(err, "could not fill nonce")
 
-	return aead.Seal(nonce, nonce, dataBytes, nil), nil
+	return aead.Seal(nonce, nonce, dataBytes, nil)
 }
 
 func DecryptData(aead cipher.AEAD, encryptedBytes []byte) ([]byte, error) {

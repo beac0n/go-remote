@@ -12,6 +12,7 @@ func WriteTimestampFile(timestampBytes []byte) {
 	size := len(timestampBytes)
 	if size != 8 {
 		log.Fatal("ERROR: timestamp should be exactly 8 bytes long, but was", size)
+		return
 	}
 
 	WriteBytes(FilePathTimestamp, timestampBytes)
@@ -25,7 +26,8 @@ func ReadTimestampFile() ([]byte, error) {
 
 	fileSize := fileInfo.Size()
 	if fileSize != 8 {
-		log.Fatal("ERROR: ", FilePathTimestamp, " should be exactly 8 bytes long, but was", fileSize)
+		log.Fatal("ERROR:", FilePathTimestamp, "should be exactly 8 bytes long, but was", fileSize)
+		return nil, nil
 	}
 
 	return ioutil.ReadFile(FilePathTimestamp)

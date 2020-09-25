@@ -60,8 +60,5 @@ func GetDataToSend(keyFileBytes []byte) []byte {
 	aeadKey, err := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
 	util.Check(err, "")
 
-	encryptedData, err := util.EncryptData(aeadKey, dataBytes)
-	util.Check(err, "")
-
-	return encryptedData
+	return util.EncryptData(aeadKey, dataBytes)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"go-remote/src/client"
 	"go-remote/src/server"
 	"go-remote/src/util"
@@ -41,8 +42,7 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 			usedDataToSend = dataToSend
 		}
 
-		resolvedAddress, err := net.ResolveUDPAddr("udp", address)
-		util.Check(err, "could not resolve address")
+		resolvedAddress, _ := net.ResolveUDPAddr("udp", address)
 
 		usedSourcePort := util.GetSourcePort(keyFileBytes)
 
@@ -52,14 +52,9 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 
 		time.Sleep(time.Duration(waitTime) * time.Second)
 
-		connection, err := net.DialUDP("udp", &net.UDPAddr{Port: usedSourcePort}, resolvedAddress)
-		util.Check(err, "could not connect to udp server")
-
-		_, err = io.Copy(connection, bytes.NewReader(usedDataToSend))
-		util.Check(err, "could not send bytes to udp server")
-
-		err = connection.Close()
-		util.Check(err, "could not close udp connection")
+		connection, _ := net.DialUDP("udp", &net.UDPAddr{Port: usedSourcePort}, resolvedAddress)
+		_, _ = io.Copy(connection, bytes.NewReader(usedDataToSend))
+		_ = connection.Close()
 
 		return false
 	}
@@ -67,20 +62,27 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 
 var currentPort = 12345
 
-func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath string) bool) {
-	keyName := client.Run(true, "", "")
-
-	keyFile := "./" + keyName + util.KeySuffix
+func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint64, dataSender func(address string, keyFilePath string) bool) {
+	if keyFilePath == "" {
+		keyFilePath = getKeyFilePath()
+	}
 
 	currentPort += 1
 	port := strconv.Itoa(currentPort)
 
 	quit := make(chan bool)
-	go server.Run(port, keyFile, int64(1), "touch .start", int64(1), "touch .end", quit)
+	_ = os.Remove(util.FilePathTimestamp)
+	go server.Run(port, keyFilePath, int64(1), "touch .start", int64(1), "touch .end", quit)
 
 	time.Sleep(time.Millisecond)
 
-	success := dataSender("127.0.0.1:"+port, keyFile)
+	if timestampFileContent > 0 {
+		timestampBytes := make([]byte, util.TimestampLen)
+		binary.LittleEndian.PutUint64(timestampBytes, timestampFileContent)
+		util.WriteBytes(util.FilePathTimestamp, timestampBytes)
+	}
+
+	success := dataSender("127.0.0.1:"+port, keyFilePath)
 
 	quit <- true
 
@@ -97,8 +99,13 @@ func testReceiveData(t *testing.T, dataSender func(address string, keyFilePath s
 		assertNotEqual(t, endErr, nil)
 	}
 
-	_ = os.Remove(keyFile)
+	_ = os.Remove(keyFilePath)
 	_ = os.Remove("./.timestamp")
 	_ = os.Remove(startFile)
 	_ = os.Remove(endFile)
+}
+
+func getKeyFilePath() string {
+	keyName := client.Run(true, "", "")
+	return "./" + keyName + util.KeySuffix
 }

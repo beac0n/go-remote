@@ -91,6 +91,7 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, timeFrame 
 
 	if lastTsNanoInt >= nowNanoInt {
 		log.Fatal("ERROR: last timestamp must be smaller than now")
+		return false
 	}
 
 	tsNanoBytes := dataBytes[0:util.TimestampLen]
@@ -105,7 +106,7 @@ func validateIncomingData(encryptedBytes []byte, aeadKey cipher.AEAD, timeFrame 
 		util.WriteTimestampFile(tsNanoBytes)
 		return true
 	} else if !isWithinTimeFrame {
-		log.Println("ERROR got invalid timestamp.\nExpected",
+		log.Println("ERROR timestamp not within timeframe.\nExpected",
 			tsNanoInt, "(", time.Unix(tsNanoInt/util.SecInNs, 0), ")\nto be between",
 			startTsNano, "(", time.Unix(startTsNano/util.SecInNs, 0), ")\nand",
 			endTsNano, "(", time.Unix(endTsNano/util.SecInNs, 0), ")")
