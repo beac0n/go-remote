@@ -22,6 +22,7 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 	util.Check(err, "could not parse aes key bytes")
 
 	packetConnection := setupPacketConnection(port)
+	defer packetConnection.Close()
 	for {
 		if quit(quitChan) {
 			return
