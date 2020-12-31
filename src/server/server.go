@@ -14,7 +14,7 @@ import (
 func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quitChan chan bool) {
 	util.InitTimestampFile()
 
-	keyFileBytes := util.ReadKeyBytes(keyFilePath)
+	keyFileBytes := util.GetKeyBytes(keyFilePath)
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(aesKeyBytes))
 

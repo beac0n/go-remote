@@ -2,10 +2,12 @@ package main
 
 import (
 	"bou.ke/monkey"
+	"encoding/base64"
 	"fmt"
 	"go-remote/src/client"
 	"go-remote/src/server"
 	"go-remote/src/util"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -25,26 +27,36 @@ func TestInvalidClientParams(t *testing.T) {
 }
 
 func TestKeyGen(t *testing.T) {
-	keyName := client.Run(true, "", "")
+	keyFilePath := getKeyFilePath()
+	defer os.Remove(keyFilePath)
 
-	keyFile := "./" + keyName + util.KeySuffix
-	fileInfo, err := os.Stat(keyFile)
+	fileInfo, err := os.Stat(keyFilePath)
 	assertEqual(t, err, nil)
 	assertEqual(t, fileInfo.Size(), int64(util.AesKeySize))
-
-	_ = os.Remove(keyFile)
 }
 
-func TestSendData(t *testing.T) {
-	keyName := client.Run(true, "", "")
-	keyFile := "./" + keyName + util.KeySuffix
-	result := client.Run(false, keyFile, "127.0.0.1:8080")
-	assertEqual(t, len(result), util.EncryptedDataLen)
+func TestSendDataFileKey(t *testing.T) {
+	keyFilePath := getKeyFilePath()
+	defer os.Remove(keyFilePath)
 
-	_ = os.Remove(keyFile)
+	result := client.Run(false, keyFilePath, "127.0.0.1:8080")
+	assertEqual(t, len(result), util.EncryptedDataLen)
+}
+
+func TestSendDataBase64Key(t *testing.T) {
+	keyFilePath := getKeyFilePath()
+	defer os.Remove(keyFilePath)
+
+	fileBytes, _ := ioutil.ReadFile(keyFilePath)
+	keyFileBase64 := base64.StdEncoding.EncodeToString(fileBytes)
+
+	result := client.Run(false, keyFileBase64, "127.0.0.1:8080")
+	assertEqual(t, len(result), util.EncryptedDataLen)
 }
 
 func TestInvalidTimestamp(t *testing.T) {
+	defer os.Remove(util.FilePathTimestamp)
+
 	var loggedValue = ""
 	defer monkey.Patch(log.Fatal, func(v ...interface{}) {
 		loggedValue = fmt.Sprintf("%v", v)
@@ -53,14 +65,13 @@ func TestInvalidTimestamp(t *testing.T) {
 	util.WriteBytes(util.FilePathTimestamp, make([]byte, 9))
 
 	keyFilePath := getKeyFilePath()
+	defer os.Remove(keyFilePath)
+
 	quit := make(chan bool)
 	go server.Run(strconv.Itoa(23456), keyFilePath, int64(1), "touch .start", int64(1), "touch .end", quit)
 	quit <- true
 
 	assertEqual(t, loggedValue, "[ERROR: ./.timestamp should be exactly 8 bytes long, but was 9]")
-
-	_ = os.Remove(util.FilePathTimestamp)
-	_ = os.Remove(keyFilePath)
 }
 
 func TestReceiveData(t *testing.T) {
@@ -77,7 +88,7 @@ func TestReceiveDataTimestampTooNew(t *testing.T) {
 	}).Unpatch()
 
 	keyFilePath := getKeyFilePath()
-	keyFileBytes := util.ReadKeyBytes(keyFilePath)
+	keyFileBytes := util.GetKeyBytes(keyFilePath)
 	aeadKey, _ := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
 	encryptedData := util.EncryptData(aeadKey, util.GetTimestampNowBytes())
 

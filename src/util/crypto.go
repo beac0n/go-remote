@@ -4,24 +4,65 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
-func ReadKeyBytes(filePath string) []byte {
-	fileInfo, err := os.Stat(filePath)
-	Check(err, "could not read file"+filePath)
+func GetKeyBytes(filePathOrBase64 string) []byte {
+	base64KeyBytes, base64Err := getKeyBytesFromBase64(filePathOrBase64)
+	fileKeyBytes, fileErr := getKeyBytesFromFile(filePathOrBase64)
 
-	fileSize := fileInfo.Size()
-	if fileSize != AesKeySize {
-		log.Fatal("ERROR: ", filePath, "should be exactly", AesKeySize, "bytes long, but was", fileSize)
+	base64ErrString := "could not decode base64 key " + filePathOrBase64
+	fileErrString := "could not read file " + filePathOrBase64
+
+	if base64Err != nil && fileErr != nil {
+		LogError(base64Err, base64ErrString)
+		LogError(fileErr, fileErrString)
+		os.Exit(1)
+		return nil
+	} else if base64Err != nil && fileErr == nil {
+		return fileKeyBytes
+	} else if base64Err == nil && fileErr != nil {
+		return base64KeyBytes
+	} else if base64.StdEncoding.EncodeToString(fileKeyBytes) == filePathOrBase64 {
+		return base64KeyBytes
+	} else {
+		LogError(nil, "key is valid base64 and also a file, but they differ. Which one to choose?")
+		os.Exit(1)
+		return nil
 	}
+}
+
+func getKeyBytesFromBase64(filePathOrBase64 string) ([]byte, error) {
+	base64KeyBytes, base64Err := base64.StdEncoding.DecodeString(filePathOrBase64)
+	if base64Err != nil {
+		return nil, base64Err
+	}
+
+	logKeyBytesSizeError(filePathOrBase64, int64(len(base64KeyBytes)))
+	return base64KeyBytes, nil
+}
+
+func getKeyBytesFromFile(filePath string) ([]byte, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	logKeyBytesSizeError(filePath, fileInfo.Size())
 
 	fileBytes, err := ioutil.ReadFile(filePath)
 	Check(err, "could not read file bytes"+filePath)
 
-	return fileBytes
+	return fileBytes, nil
+}
+
+func logKeyBytesSizeError(filePath string, fileSize int64) {
+	if fileSize != AesKeySize {
+		log.Fatal("ERROR: ", filePath, "should be exactly", AesKeySize, "bytes long, but was", fileSize)
+	}
 }
 
 func GenRandomBytes(length int) []byte {

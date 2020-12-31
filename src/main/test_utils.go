@@ -35,7 +35,7 @@ func assertNotEqual(t *testing.T, actual interface{}, notExpected interface{}) {
 
 func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(address string, keyFilePath string) bool {
 	return func(address, keyFilePath string) bool {
-		keyFileBytes := util.ReadKeyBytes(keyFilePath)
+		keyFileBytes := util.GetKeyBytes(keyFilePath)
 		usedDataToSend := client.GetDataToSend(keyFileBytes)
 
 		if dataToSend != nil {
@@ -53,8 +53,8 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 		time.Sleep(time.Duration(waitTime) * time.Second)
 
 		connection, _ := net.DialUDP("udp", &net.UDPAddr{Port: usedSourcePort}, resolvedAddress)
+		defer connection.Close()
 		_, _ = io.Copy(connection, bytes.NewReader(usedDataToSend))
-		_ = connection.Close()
 
 		return false
 	}
@@ -63,9 +63,12 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 var currentPort = 12345
 
 func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint64, dataSender func(address string, keyFilePath string) bool) {
+	defer os.Remove("./.timestamp")
+
 	if keyFilePath == "" {
 		keyFilePath = getKeyFilePath()
 	}
+	defer os.Remove(keyFilePath)
 
 	currentPort += 1
 	port := strconv.Itoa(currentPort)
@@ -87,7 +90,10 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 	quit <- true
 
 	startFile := "./.start"
+	defer os.Remove(startFile)
+
 	endFile := "./.end"
+	defer os.Remove(endFile)
 
 	_, startErr := os.Stat(startFile)
 	_, endErr := os.Stat(endFile)
@@ -98,11 +104,6 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 		assertNotEqual(t, startErr, nil)
 		assertNotEqual(t, endErr, nil)
 	}
-
-	_ = os.Remove(keyFilePath)
-	_ = os.Remove("./.timestamp")
-	_ = os.Remove(startFile)
-	_ = os.Remove(endFile)
 }
 
 func getKeyFilePath() string {

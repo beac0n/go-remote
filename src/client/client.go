@@ -36,7 +36,7 @@ func genKey() string {
 }
 
 func sendData(address, keyFilePath string) string {
-	keyFileBytes := util.ReadKeyBytes(keyFilePath)
+	keyFileBytes := util.GetKeyBytes(keyFilePath)
 	dataToSend := GetDataToSend(keyFileBytes)
 
 	resolvedAddress, err := net.ResolveUDPAddr("udp", address)

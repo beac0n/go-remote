@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	keyFilePath := flag.String("key", "", "path to key file")
+	keyFilePath := flag.String("key", "", "path to key file or base64 encoded key")
 
 	// client flags
 	doGenKey := flag.Bool("gen-key", false, "generate key pair")

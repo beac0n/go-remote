@@ -12,12 +12,20 @@ import (
 func Check(err error, reason string) {
 	if err == nil {
 		return
-	}
-	if reason == "" {
+	} else if reason == "" {
+		os.Exit(1)
+	} else {
+		LogError(err, reason)
 		os.Exit(1)
 	}
+}
 
-	log.Fatal("ERROR: ", reason, ": ", err)
+func LogError(err error, reason string) {
+	if err == nil {
+		log.Println("ERROR: ", reason)
+	} else {
+		log.Println("ERROR: ", reason, ": ", err)
+	}
 }
 
 func GetSourcePort(keyBytes []byte) int {
