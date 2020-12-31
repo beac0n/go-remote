@@ -1,0 +1,51 @@
+[Unit]
+Description=go-remote service
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/go-remote -server -key '<base64-key>' -command-start '<start-command>' -command-end '<end-command>' -command-timeout 10 -port 80
+Restart=always
+
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectClock=true
+ProtectKernelModules=true
+ProtectProc=noaccess
+ProtectHostname=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+SystemCallFilter=~@clock
+SystemCallFilter=~@debug
+SystemCallFilter=~@module
+SystemCallFilter=~@mount
+SystemCallFilter=~@raw-io
+SystemCallFilter=~@reboot
+SystemCallFilter=~@privileged
+SystemCallFilter=~@resources
+
+SystemCallFilter=~@cpu-emulation
+SystemCallFilter=~@obsolete
+
+LockPersonality=true
+
+MemoryDenyWriteExecute=true
+
+UMask=0077
+
+PrivateDevices=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectSystem=full
+RestrictSUIDSGID=true
+ReadWritePaths=/etc/ufw/user.rules
+ReadWritePaths=/etc/ufw/user6.rules
+
+[Install]
+WantedBy=multi-user.target
