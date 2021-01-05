@@ -6,12 +6,13 @@ import (
 	"go-remote/src/util"
 	"log"
 	"net"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func Run(port string, keyFilePath string, timeFrame int64, commandStart string, commandTimeout int64, commandEnd string, quitChan chan bool) {
+func Run(port string, keyFilePath string, timeFrame int64, tmpfsDir string, quitChan chan bool) {
 	util.InitTimestampFile()
 
 	keyFileBytes := util.GetKeyBytes(keyFilePath)
@@ -51,9 +52,7 @@ func Run(port string, keyFilePath string, timeFrame int64, commandStart string, 
 		}
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
-			util.ExecuteCommand(commandStart)
-			time.Sleep(time.Duration(commandTimeout) * time.Second)
-			util.ExecuteCommand(commandEnd)
+			util.ExecuteCommand("touch " + filepath.Join(tmpfsDir, "start"))
 			emptyBuffer(packetConnection)
 		}
 	}

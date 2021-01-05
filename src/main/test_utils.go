@@ -75,7 +75,7 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 
 	quit := make(chan bool)
 	_ = os.Remove(util.FilePathTimestamp)
-	go server.Run(port, keyFilePath, int64(1), "touch .start", int64(1), "touch .end", quit)
+	go server.Run(port, keyFilePath, int64(1), "/tmp", quit)
 
 	time.Sleep(time.Millisecond)
 
@@ -89,20 +89,14 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 
 	quit <- true
 
-	startFile := "./.start"
+	startFile := "/tmp/start"
 	defer os.Remove(startFile)
 
-	endFile := "./.end"
-	defer os.Remove(endFile)
-
 	_, startErr := os.Stat(startFile)
-	_, endErr := os.Stat(endFile)
 	if success {
 		assertEqual(t, startErr, nil)
-		assertEqual(t, endErr, nil)
 	} else {
 		assertNotEqual(t, startErr, nil)
-		assertNotEqual(t, endErr, nil)
 	}
 }
 

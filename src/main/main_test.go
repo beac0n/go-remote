@@ -68,7 +68,7 @@ func TestInvalidTimestamp(t *testing.T) {
 	defer os.Remove(keyFilePath)
 
 	quit := make(chan bool)
-	go server.Run(strconv.Itoa(23456), keyFilePath, int64(1), "touch .start", int64(1), "touch .end", quit)
+	go server.Run(strconv.Itoa(23456), keyFilePath, int64(1), "/tmp", quit)
 	quit <- true
 
 	assertEqual(t, loggedValue, "[ERROR: ./.timestamp should be exactly 8 bytes long, but was 9]")
