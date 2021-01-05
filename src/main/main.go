@@ -21,7 +21,7 @@ func main() {
 	port := flag.String("port", "8080", "udp port")
 	timeFrame := flag.Int64("timeframe", int64(5), "timestamp in request must not be older than this timeframe (in seconds)")
 
-	tmpfsDirUsage := "path to tmpfs directory, where 'start' file is expected"
+	tmpfsDirUsage := "path to tmpfs directory, containing 'start' file"
 	tmpfsDir := flag.String("tmpfs", "", tmpfsDirUsage)
 
 	flag.Parse()
