@@ -72,16 +72,18 @@ func quit(quit chan bool) bool {
 }
 
 func setupPacketConnection(port string) net.PacketConn {
-	address := "0.0.0.0:" + port
-	log.Println("Starting UDP server on", address)
+
 
 	var packetConnection net.PacketConn
 	var err error
 
 	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
+		log.Println("Starting UDP server on socket from systemd")
 		f := os.NewFile(3, "from systemd")
 		packetConnection, err = net.FilePacketConn(f)
 	} else {
+		address := "0.0.0.0:" + port
+		log.Println("Starting UDP server on", address)
 		packetConnection, err = net.ListenPacket("udp", address)
 	}
 
