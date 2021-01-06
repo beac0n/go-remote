@@ -1,7 +1,7 @@
 [Unit]
 Description=go-remote service
-Requires=network-online.target go-remote-command-executor.service
-After=network-online.target
+Requires=network-online.target go-remote.socket go-remote-command-executor.service
+After=network-online.target go-remote.socket
 
 [Service]
 Type=simple
@@ -12,7 +12,6 @@ Group=go-remote
 
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 DeviceAllow=
-DynamicUser=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 NoNewPrivileges=true

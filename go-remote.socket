@@ -1,0 +1,9 @@
+[Unit]
+Description=go-remote socket
+PartOf=go-remote.service
+
+[Socket]
+ListenDatagram=0.0.0.0:80
+
+[Install]
+WantedBy=sockets.target
