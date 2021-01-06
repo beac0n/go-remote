@@ -2,6 +2,7 @@ clean:
 	rm -rf build
 
 build: clean
+	go mod vendor
 	go build -ldflags "-s" -o build/go-remote src/main/main.go
 
 install: build
