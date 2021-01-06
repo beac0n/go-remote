@@ -72,7 +72,7 @@ func quit(quit chan bool) bool {
 }
 
 func setupPacketConnection(port string) net.PacketConn {
-	address := "127.0.0.1:" + port
+	address := "0.0.0.0:" + port
 	log.Println("Starting UDP server on", address)
 
 	var packetConnection net.PacketConn
