@@ -1,7 +1,7 @@
 [Unit]
 Description=go-remote service
 Requires=network-online.target go-remote.socket go-remote-command-executor.service
-After=network-online.target go-remote.socket
+After=network-online.target go-remote.socket go-remote-command-executor.service
 
 [Service]
 Type=simple
