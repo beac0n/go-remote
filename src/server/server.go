@@ -6,6 +6,7 @@ import (
 	"go-remote/src/util"
 	"log"
 	"net"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -74,7 +75,16 @@ func setupPacketConnection(port string) net.PacketConn {
 	address := "127.0.0.1:" + port
 	log.Println("Starting UDP server on", address)
 
-	packetConnection, err := net.ListenPacket("udp", address)
+	var packetConnection net.PacketConn
+	var err error
+
+	if os.Getenv("LISTEN_PID") == strconv.Itoa(os.Getpid()) {
+		f := os.NewFile(3, "from systemd")
+		packetConnection, err = net.FilePacketConn(f)
+	} else {
+		packetConnection, err = net.ListenPacket("udp", address)
+	}
+
 	util.Check(err, "could not start udp server")
 
 	return packetConnection
