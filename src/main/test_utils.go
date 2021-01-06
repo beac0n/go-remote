@@ -34,8 +34,8 @@ func assertNotEqual(t *testing.T, actual interface{}, notExpected interface{}) {
 }
 
 func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(address string, keyFilePath string) bool {
-	return func(address, keyFilePath string) bool {
-		keyFileBytes := util.GetKeyBytes(keyFilePath)
+	return func(address, keyBase64 string) bool {
+		keyFileBytes := util.GetKeyBytes(keyBase64)
 		usedDataToSend := client.GetDataToSend(keyFileBytes)
 
 		if dataToSend != nil {
@@ -66,7 +66,7 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 	defer os.Remove("./.timestamp")
 
 	if keyFilePath == "" {
-		keyFilePath = getKeyFilePath()
+		keyFilePath = getBase64Key()
 	}
 	defer os.Remove(keyFilePath)
 
@@ -100,7 +100,6 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 	}
 }
 
-func getKeyFilePath() string {
-	keyName := client.Run(true, "", "")
-	return "./" + keyName + util.KeySuffix
+func getBase64Key() string {
+	return client.Run(true, "", "")
 }

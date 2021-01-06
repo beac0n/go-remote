@@ -2,19 +2,21 @@ package client
 
 import (
 	"bytes"
+	"encoding/base64"
+	"fmt"
 	"go-remote/src/util"
 	"io"
 	"log"
 	"net"
-	"strconv"
-	"time"
 )
 
-func Run(doGenKey bool, keyfilePath string, address string) string {
+func Run(doGenKey bool, keyBase64 string, address string) string {
 	if doGenKey {
-		return genKey()
-	} else if keyfilePath != "" && address != "" {
-		return sendData(address, keyfilePath)
+		key := genKey()
+		fmt.Println("key: '" + key + "'")
+		return key
+	} else if keyBase64 != "" && address != "" {
+		return sendData(address, keyBase64)
 	} else {
 		log.Fatal("ERROR: no valid client flag combination. ",
 			"Please provide either 'gen-key' to create a keypair or provide 'key-id' and 'address'")
@@ -24,19 +26,12 @@ func Run(doGenKey bool, keyfilePath string, address string) string {
 }
 
 func genKey() string {
-	nanoSecString := strconv.FormatInt(time.Now().UnixNano(), 10)
-
-	filePathKey := "./" + nanoSecString + util.KeySuffix
-
 	aesKeyBytes := util.GenRandomBytes(util.AesKeySize)
-	util.WriteBytes(filePathKey, aesKeyBytes)
-	log.Println("Wrote key to", filePathKey)
-
-	return nanoSecString
+	return base64.StdEncoding.EncodeToString(aesKeyBytes)
 }
 
-func sendData(address, keyFilePath string) string {
-	keyFileBytes := util.GetKeyBytes(keyFilePath)
+func sendData(address, keyBase64 string) string {
+	keyFileBytes := util.GetKeyBytes(keyBase64)
 	dataToSend := GetDataToSend(keyFileBytes)
 
 	resolvedAddress, err := net.ResolveUDPAddr("udp", address)

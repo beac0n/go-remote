@@ -13,10 +13,10 @@ import (
 	"time"
 )
 
-func Run(port string, keyFilePath string, timeFrame int64, tmpfsDir string, quitChan chan bool) {
+func Run(port string, keyBase64 string, timeFrame int64, tmpfsDir string, quitChan chan bool) {
 	util.InitTimestampFile()
 
-	keyFileBytes := util.GetKeyBytes(keyFilePath)
+	keyFileBytes := util.GetKeyBytes(keyBase64)
 	aesKeyBytes := keyFileBytes[0:util.AesKeySize]
 	expectedSourcePort := strconv.Itoa(util.GetSourcePort(aesKeyBytes))
 
@@ -72,7 +72,6 @@ func quit(quit chan bool) bool {
 }
 
 func setupPacketConnection(port string) net.PacketConn {
-
 
 	var packetConnection net.PacketConn
 	var err error

@@ -3,8 +3,7 @@ package util
 import _ "golang.org/x/crypto/sha3"
 import "crypto"
 
-const FilePathTimestamp = "/tmp/.timestamp"
-const KeySuffix = ".key"
+const FilePathTimestamp = "/tmp/go-remote-timestamp"
 
 const HashFunction = crypto.SHA3_512
 

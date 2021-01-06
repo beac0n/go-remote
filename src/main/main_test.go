@@ -7,7 +7,6 @@ import (
 	"go-remote/src/client"
 	"go-remote/src/server"
 	"go-remote/src/util"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -27,30 +26,23 @@ func TestInvalidClientParams(t *testing.T) {
 }
 
 func TestKeyGen(t *testing.T) {
-	keyFilePath := getKeyFilePath()
-	defer os.Remove(keyFilePath)
+	base64Key := getBase64Key()
 
-	fileInfo, err := os.Stat(keyFilePath)
+	base64KeyBytes, err := base64.StdEncoding.DecodeString(base64Key)
+
 	assertEqual(t, err, nil)
-	assertEqual(t, fileInfo.Size(), int64(util.AesKeySize))
+	assertEqual(t, len(base64KeyBytes), util.AesKeySize)
 }
 
 func TestSendDataFileKey(t *testing.T) {
-	keyFilePath := getKeyFilePath()
-	defer os.Remove(keyFilePath)
+	keyFilePath := getBase64Key()
 
 	result := client.Run(false, keyFilePath, "127.0.0.1:8080")
 	assertEqual(t, len(result), util.EncryptedDataLen)
 }
 
 func TestSendDataBase64Key(t *testing.T) {
-	keyFilePath := getKeyFilePath()
-	defer os.Remove(keyFilePath)
-
-	fileBytes, _ := ioutil.ReadFile(keyFilePath)
-	keyFileBase64 := base64.StdEncoding.EncodeToString(fileBytes)
-
-	result := client.Run(false, keyFileBase64, "127.0.0.1:8080")
+	result := client.Run(false, getBase64Key(), "127.0.0.1:8080")
 	assertEqual(t, len(result), util.EncryptedDataLen)
 }
 
@@ -64,14 +56,11 @@ func TestInvalidTimestamp(t *testing.T) {
 
 	util.WriteBytes(util.FilePathTimestamp, make([]byte, 9))
 
-	keyFilePath := getKeyFilePath()
-	defer os.Remove(keyFilePath)
-
 	quit := make(chan bool)
-	go server.Run(strconv.Itoa(23456), keyFilePath, int64(1), "/tmp", quit)
+	go server.Run(strconv.Itoa(23456), getBase64Key(), int64(1), "/tmp", quit)
 	quit <- true
 
-	assertEqual(t, loggedValue, "[ERROR: ./.timestamp should be exactly 8 bytes long, but was 9]")
+	assertEqual(t, loggedValue, "[ERROR: /tmp/go-remote-timestamp should be exactly 8 bytes long, but was 9]")
 }
 
 func TestReceiveData(t *testing.T) {
@@ -87,12 +76,12 @@ func TestReceiveDataTimestampTooNew(t *testing.T) {
 		loggedValue = fmt.Sprintf("%v", v)
 	}).Unpatch()
 
-	keyFilePath := getKeyFilePath()
-	keyFileBytes := util.GetKeyBytes(keyFilePath)
+	keyBase64 := getBase64Key()
+	keyFileBytes := util.GetKeyBytes(keyBase64)
 	aeadKey, _ := util.GetAesGcmAEAD(keyFileBytes[0:util.AesKeySize])
 	encryptedData := util.EncryptData(aeadKey, util.GetTimestampNowBytes())
 
-	testReceiveData(t, keyFilePath, uint64(time.Now().UnixNano()+1), sendDataGenerator(encryptedData, -1, 0))
+	testReceiveData(t, keyBase64, uint64(time.Now().UnixNano()+1), sendDataGenerator(encryptedData, -1, 0))
 
 	assertStartsWith(t, loggedValue, "[ERROR got invalid timestamp. Expected ")
 }
