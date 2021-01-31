@@ -23,7 +23,6 @@ Application can be run in either client mode or server mode (`-server`).
 - `-port` port on which to run udp server, default: `8080`
 - `-timeframe` (unit: seconds) timestamp sent by the client must be between `now - timeframe` and `now`, default: `5`
 - `-key` base64 encoded key (e.g. `fdUPciUFq0nTodfSzHiImOBuqBGzSsMSx411DyPMoZ4=`)
-- `-tmpfs` path to tmpfs directory, read by `go-remote-command-executor`
 
 ### systemd integration
 Install `go-remote.service` and `go-remote.socket` file (https://unix.stackexchange.com/questions/224992/where-do-i-put-my-systemd-unit-file).

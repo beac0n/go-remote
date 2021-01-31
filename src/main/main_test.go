@@ -57,13 +57,16 @@ func TestInvalidTimestamp(t *testing.T) {
 	util.WriteBytes(util.FilePathTimestamp, make([]byte, 9))
 
 	quit := make(chan bool)
-	go server.Run(strconv.Itoa(23456), getBase64Key(), int64(1), "/tmp", quit)
+	go server.Run(strconv.Itoa(23456), getBase64Key(), int64(1), quit)
 	quit <- true
 
 	assertEqual(t, loggedValue, "[ERROR: /tmp/go-remote-timestamp should be exactly 8 bytes long, but was 9]")
 }
 
 func TestReceiveData(t *testing.T) {
+	_ = os.MkdirAll("/tmp/go-remote", os.ModePerm)
+	_, _ = os.Create("/tmp/go-remote/start")
+
 	testReceiveData(t, "", 0, func(address string, keyFilePath string) bool {
 		client.Run(false, keyFilePath, address)
 		return true

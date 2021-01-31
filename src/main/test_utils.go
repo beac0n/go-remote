@@ -75,7 +75,7 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 
 	quit := make(chan bool)
 	_ = os.Remove(util.FilePathTimestamp)
-	go server.Run(port, keyFilePath, int64(1), "/tmp", quit)
+	go server.Run(port, keyFilePath, int64(1), quit)
 
 	time.Sleep(time.Millisecond)
 
@@ -89,7 +89,7 @@ func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint
 
 	quit <- true
 
-	startFile := "/tmp/start"
+	startFile := "/tmp/go-remote/start"
 	defer os.Remove(startFile)
 
 	_, startErr := os.Stat(startFile)

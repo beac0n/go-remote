@@ -7,13 +7,12 @@ import (
 	"log"
 	"net"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func Run(port string, keyBase64 string, timeFrame int64, tmpfsDir string, quitChan chan bool) {
+func Run(port string, keyBase64 string, timeFrame int64, quitChan chan bool) {
 	util.InitTimestampFile()
 
 	keyFileBytes := util.GetKeyBytes(keyBase64)
@@ -53,7 +52,12 @@ func Run(port string, keyBase64 string, timeFrame int64, tmpfsDir string, quitCh
 		}
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
-			util.ExecuteCommand("touch " + filepath.Join(tmpfsDir, "start"))
+			currentTime := time.Now().Local()
+			err := os.Chtimes("/tmp/go-remote/start", currentTime, currentTime)
+			if err != nil {
+				log.Println("ERROR: could not change time of tmp file: ", err)
+			}
+
 			emptyBuffer(packetConnection)
 		}
 	}

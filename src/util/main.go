@@ -1,12 +1,9 @@
 package util
 
 import (
-	"bytes"
 	"encoding/binary"
 	"log"
 	"os"
-	"os/exec"
-	"strings"
 )
 
 func Check(err error, reason string) {
@@ -15,16 +12,8 @@ func Check(err error, reason string) {
 	} else if reason == "" {
 		os.Exit(1)
 	} else {
-		LogError(err, reason)
-		os.Exit(1)
-	}
-}
-
-func LogError(err error, reason string) {
-	if err == nil {
-		log.Println("ERROR: ", reason)
-	} else {
 		log.Println("ERROR: ", reason, ": ", err)
+		os.Exit(1)
 	}
 }
 
@@ -37,30 +26,4 @@ func GetSourcePort(keyBytes []byte) int {
 	}
 
 	return sourcePort
-}
-
-func ExecuteCommand(command string) {
-	commandSplit := strings.Split(command, " ")
-	commandSplitLen := len(commandSplit)
-
-	var cmd *exec.Cmd
-	if commandSplitLen == 0 {
-		return
-	} else if commandSplitLen == 1 {
-		cmd = exec.Command(commandSplit[0])
-	} else {
-		cmd = exec.Command(commandSplit[0], commandSplit[1:]...)
-	}
-
-	var stdOutBytes bytes.Buffer
-	var stdErrBytes bytes.Buffer
-	cmd.Stdout = &stdOutBytes
-	cmd.Stderr = &stdErrBytes
-
-	log.Println("running command", command)
-	if err := cmd.Run(); err != nil {
-		log.Println("ERROR when running command:", err)
-	}
-	log.Println("Stdout:", stdOutBytes.String())
-	log.Println("Stderr:", stdErrBytes.String())
 }

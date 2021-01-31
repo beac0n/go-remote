@@ -19,17 +19,15 @@ func main() {
 	port := flag.String("port", "8080", "udp port")
 	timeFrame := flag.Int64("timeframe", int64(5), "timestamp in request must not be older than this timeframe (in seconds)")
 
-	tmpfsDir := flag.String("tmpfs", "", "path to tmpfs directory, containing 'start' file")
-
 	flag.Parse()
 
 	if *isServer {
-		if *tmpfsDir == "" || *keyBase64 == "" {
+		if *keyBase64 == "" {
 			flag.Usage()
 			os.Exit(1)
 		}
 
-		server.Run(*port, *keyBase64, *timeFrame, *tmpfsDir, nil)
+		server.Run(*port, *keyBase64, *timeFrame, nil)
 	} else {
 		client.Run(*doGenKey, *keyBase64, *address)
 	}
