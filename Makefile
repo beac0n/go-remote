@@ -20,6 +20,10 @@ install_command_executor: build_command_executor
 uninstall_command_executor:
 	sudo rm /usr/local/bin/go-remote-command-executor
 
+install: install_command_executor install_server
+
+uninstall: uninstall_command_executor uninstall_server
+
 test: build_command_executor
 	-sudo killall go-remote-command-executor
 	-rm /tmp/go-remote.sock
