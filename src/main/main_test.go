@@ -64,9 +64,6 @@ func TestInvalidTimestamp(t *testing.T) {
 }
 
 func TestReceiveData(t *testing.T) {
-	_ = os.MkdirAll("/tmp/go-remote", os.ModePerm)
-	_, _ = os.Create("/tmp/go-remote/start")
-
 	testReceiveData(t, "", 0, func(address string, keyFilePath string) bool {
 		client.Run(false, keyFilePath, address)
 		return true
