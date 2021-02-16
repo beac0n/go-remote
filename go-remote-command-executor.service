@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/go-remote-command-executor -user go-remote -command-start '<start-command>' -command-end '<end-command>' -command-timeout 10 -tmpfs /mnt/go-remote
+ExecStart=/usr/local/bin/go-remote-command-executor -user go-remote -command-start '<start-command>' -command-end '<end-command>' -command-timeout 10
 Restart=always
 
 DeviceAllow=

@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	userPtr := flag.String("user-name", "", "the name of the user who is allowed to write to the socket")
+	userPtr := flag.String("user", "", "the name of the user who is allowed to write to the socket")
 	startCommandPtr := flag.String("command-start", "echo \"start!\"", "the command to execute when start is triggered")
 	stopCommandPtr := flag.String("command-stop", "echo \"end!\"", "the command to execute after command-timeout is over")
 	commandTimeoutPtr := flag.Int64("command-timeout", int64(60), "how long to wait before executing the end command")

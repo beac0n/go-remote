@@ -5,7 +5,7 @@ After=network-online.target go-remote.socket go-remote-command-executor.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/go-remote -server -key '<base64-key>' -tmpfs /mnt/go-remote -port 80
+ExecStart=/usr/local/bin/go-remote -server -key '<base64-key>' -port 80
 Restart=always
 User=go-remote
 Group=go-remote

@@ -24,13 +24,6 @@ Application can be run in either client mode or server mode (`-server`).
 - `-timeframe` (unit: seconds) timestamp sent by the client must be between `now - timeframe` and `now`, default: `5`
 - `-key` base64 encoded key (e.g. `fdUPciUFq0nTodfSzHiImOBuqBGzSsMSx411DyPMoZ4=`)
 
-### systemd integration
-Install `go-remote.service` and `go-remote.socket` file (https://unix.stackexchange.com/questions/224992/where-do-i-put-my-systemd-unit-file).
-Make sure to edit the `go-remote.service` and add the base64 encoded key (use `-gen-key` to generate one).
-Make sure you also have `go-remote-command-executor.service` installed.
-
-If you want the service to run on a different port than `80`, edit `go-remote.service` and `go-remote.socket` respectively
-
 # go-remote-command-executor
 This is the companion service for go-remote
 
@@ -46,7 +39,12 @@ make build_command_executor
 - `-command-timeout` (unit: seconds) the timeout to wait after command-start was executed, default: `60`
 - `-command-end` the command to execute after command-timeout is over, default: `echo "end!"`
 
-### systemd integration
-Install `go-remote-command-executor.service` file (https://unix.stackexchange.com/questions/224992/where-do-i-put-my-systemd-unit-file).
-Make sure to edit the `go-remote-command-executor.service` and add the start and stop command.
-Make sure you also have `go-remote.service` installed.
+# systemd integration
+- Run `make install` to install `go-remote` and `go-remote-command-executor`
+
+- Install `go-remote.service`, `go-remote.socket` and `go-remote-command-executor.service` files 
+(https://unix.stackexchange.com/questions/224992/where-do-i-put-my-systemd-unit-file).
+
+- Make sure to edit the `go-remote.service` and add the base64 encoded key (use `-gen-key` to generate one).
+- Make sure to edit the `go-remote-command-executor.service` and add the start and stop command.
+- If you want the service to run on a different port than `80`, edit `go-remote.service` and `go-remote.socket` respectively

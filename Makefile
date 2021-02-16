@@ -28,7 +28,7 @@ test: build_command_executor
 	-sudo killall go-remote-command-executor
 	-rm /tmp/go-remote.sock
 	mkdir -p "/tmp/go-remote"
-	sudo ./build/go-remote-command-executor -user-name $$USER -command-timeout 1 -command-start 'install -m 777 /dev/null /tmp/go-remote/start' &
+	sudo ./build/go-remote-command-executor -user $$USER -command-timeout 1 -command-start 'install -m 777 /dev/null /tmp/go-remote/start' &
 	go test src/main/main.go src/main/main_test.go src/main/test_utils.go
 	sudo killall go-remote-command-executor
 	rm /tmp/go-remote.sock
