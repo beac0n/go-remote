@@ -1,0 +1,37 @@
+[Unit]
+Description=go-remote command executor service
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/go-remote-command-executor -user go-remote -command-start '<start-command>' -command-end '<end-command>' -command-timeout 10 -tmpfs /mnt/go-remote
+Restart=always
+
+DeviceAllow=
+LockPersonality=true
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true
+ProtectClock=true
+ProtectHostname=true
+RestrictAddressFamilies=
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=~@clock
+SystemCallFilter=~@cpu-emulation
+SystemCallFilter=~@debug
+SystemCallFilter=~@keyring
+SystemCallFilter=~@memlock
+SystemCallFilter=~@module
+SystemCallFilter=~@obsolete
+SystemCallFilter=~@raw-io
+SystemCallFilter=~@reboot
+SystemCallFilter=~@resources
+SystemCallFilter=~@setuid
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
