@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"flag"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"os/user"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	userPtr := flag.String("userName", "", "the name of the userName who is allowed to write to the tmpfs")
+	userPtr := flag.String("user-name", "", "the name of the user who is allowed to write to the socket")
 	startCommandPtr := flag.String("command-start", "echo \"start!\"", "the command to execute when start is triggered")
 	stopCommandPtr := flag.String("command-stop", "echo \"end!\"", "the command to execute after command-timeout is over")
 	commandTimeoutPtr := flag.Int64("command-timeout", int64(60), "how long to wait before executing the end command")
@@ -37,44 +37,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	tmpfsDir := "/tmp/go-remote"
-	startFilePath := filepath.Join(tmpfsDir, "start")
-
-	group, err := user.Lookup(userName)
+	userCredentials, err := user.Lookup(userName)
 	panicOnErr(err)
-	uid, err := strconv.Atoi(group.Uid)
+	uid, err := strconv.Atoi(userCredentials.Uid)
 	panicOnErr(err)
-	gid, err := strconv.Atoi(group.Gid)
+	gid, err := strconv.Atoi(userCredentials.Gid)
 	panicOnErr(err)
 
-	panicOnErr(os.MkdirAll(tmpfsDir, os.FileMode(0200)))
-	panicOnErr(syscall.Chown(tmpfsDir, uid, gid))
-
-	_, err = os.Create(startFilePath)
+	socketPath := "/tmp/go-remote.sock"
+	listener, err := net.Listen("unix", socketPath)
+	panicOnErr(syscall.Chown(socketPath, uid, gid))
+	panicOnErr(syscall.Chmod(socketPath, 0200))
 	panicOnErr(err)
-
-	panicOnErr(syscall.Chown(startFilePath, uid, gid))
-	panicOnErr(syscall.Chmod(startFilePath, 0200))
-
-	currentTime := time.Now().Local()
-	panicOnErr(os.Chtimes(startFilePath, currentTime, currentTime))
-
-	lastModTs, _ := getModTs(startFilePath)
 
 	go func() {
 		for {
-			time.Sleep(10 * time.Millisecond)
-
-			modTs, err := getModTs(startFilePath)
-			if err != nil || modTs <= lastModTs {
+			connection, err := listener.Accept()
+			if err != nil {
 				continue
 			}
 
-			executeCommand(startCommand, false)
+			executeCommand(startCommand)
 			time.Sleep(time.Duration(commandTimeout) * time.Second)
-			executeCommand(stopCommand, false)
+			executeCommand(stopCommand)
 
-			lastModTs = modTs
+			_ = connection.Close()
 		}
 	}()
 
@@ -82,7 +69,7 @@ func main() {
 	signal.Notify(signalChannel, os.Interrupt)
 	<-signalChannel
 
-	_ = os.RemoveAll(tmpfsDir)
+	panicOnErr(listener.Close())
 }
 
 func panicOnErr(err error) {
@@ -91,17 +78,7 @@ func panicOnErr(err error) {
 	}
 }
 
-func getModTs(startFile string) (int64, error) {
-	fileInfo, err := os.Stat(startFile)
-	if err != nil {
-		log.Println("ERROR:", err)
-		return -1, err
-	}
-
-	return fileInfo.ModTime().Unix(), nil
-}
-
-func executeCommand(command string, terminateOnError bool) {
+func executeCommand(command string) {
 	commandSplit := strings.Split(command, " ")
 	commandSplitLen := len(commandSplit)
 
@@ -131,9 +108,7 @@ func executeCommand(command string, terminateOnError bool) {
 		log.Println("Stderr:", stdErrBytes.String())
 	}
 
-	if err != nil && !terminateOnError {
+	if err != nil {
 		log.Println("ERROR:", err)
-	} else if err != nil && terminateOnError {
-		log.Fatal("ERROR:", err)
 	}
 }

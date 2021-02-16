@@ -52,10 +52,9 @@ func Run(port string, keyBase64 string, timeFrame int64, quitChan chan bool) {
 		}
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
-			currentTime := time.Now().Local()
-			err := os.Chtimes("/tmp/go-remote/start", currentTime, currentTime)
+			_, err := net.Dial("unix", "/tmp/go-remote.sock")
 			if err != nil {
-				log.Println("ERROR: could not change time of tmp file: ", err)
+				log.Println("ERROR: could not connect to unix socket: ", err)
 			}
 
 			emptyBuffer(packetConnection)
