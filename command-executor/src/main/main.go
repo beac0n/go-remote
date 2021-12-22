@@ -45,6 +45,9 @@ func main() {
 	panicOnErr(err)
 
 	socketPath := "/tmp/go-remote.sock"
+
+	err = syscall.Unlink(socketPath)
+
 	listener, err := net.Listen("unix", socketPath)
 	panicOnErr(syscall.Chown(socketPath, uid, gid))
 	panicOnErr(syscall.Chmod(socketPath, 0200))
