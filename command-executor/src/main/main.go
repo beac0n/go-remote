@@ -47,7 +47,7 @@ func main() {
 	socketPath := "/tmp/go-remote.sock"
 	listener, err := net.Listen("unix", socketPath)
 	panicOnErr(syscall.Chown(socketPath, uid, gid))
-	panicOnErr(syscall.Chmod(socketPath, 0200))
+	//panicOnErr(syscall.Chmod(socketPath, 0200))
 	panicOnErr(err)
 
 	go func() {
