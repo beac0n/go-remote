@@ -33,6 +33,13 @@ func ReadTimestampFile() ([]byte, error) {
 	return ioutil.ReadFile(FilePathTimestamp)
 }
 
+func InitConfigDir() {
+	err := os.MkdirAll(ConfigDir, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func InitTimestampFile() {
 	_, err := ReadTimestampFile()
 	if err != nil {

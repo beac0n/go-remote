@@ -63,7 +63,7 @@ func sendDataGenerator(dataToSend []byte, sourcePort int, waitTime int64) func(a
 var currentPort = 12345
 
 func testReceiveData(t *testing.T, keyFilePath string, timestampFileContent uint64, dataSender func(address string, keyFilePath string) bool) {
-	defer os.Remove("./.timestamp")
+	defer os.Remove("/etc/go-remote/go-remote-timestamp")
 
 	if keyFilePath == "" {
 		keyFilePath = getBase64Key()

@@ -3,7 +3,9 @@ package util
 import _ "golang.org/x/crypto/sha3"
 import "crypto"
 
-const FilePathTimestamp = "/tmp/go-remote-timestamp"
+const ConfigDir = "/etc/go-remote"
+const FilePathTimestamp = "/etc/go-remote/go-remote-timestamp"
+const SocketPath = "/etc/go-remote/go-remote.sock"
 
 const HashFunction = crypto.SHA3_512
 

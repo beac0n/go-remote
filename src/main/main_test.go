@@ -60,7 +60,7 @@ func TestInvalidTimestamp(t *testing.T) {
 	go server.Run(strconv.Itoa(23456), getBase64Key(), int64(1), quit)
 	quit <- true
 
-	assertEqual(t, loggedValue, "[ERROR: /tmp/go-remote-timestamp should be exactly 8 bytes long, but was 9]")
+	assertEqual(t, loggedValue, "[ERROR: /etc/go-remote/go-remote-timestamp should be exactly 8 bytes long, but was 9]")
 }
 
 func TestReceiveData(t *testing.T) {

@@ -44,9 +44,10 @@ func main() {
 	gid, err := strconv.Atoi(userCredentials.Gid)
 	panicOnErr(err)
 
-	socketPath := "/tmp/go-remote.sock"
+	panicOnErr(os.MkdirAll("/etc/go-remote", os.ModePerm))
+	socketPath := "/etc/go-remote/go-remote.sock"
 
-	err = syscall.Unlink(socketPath)
+	_ = syscall.Unlink(socketPath)
 
 	listener, err := net.Listen("unix", socketPath)
 	panicOnErr(syscall.Chown(socketPath, uid, gid))

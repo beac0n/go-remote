@@ -13,6 +13,7 @@ import (
 )
 
 func Run(port string, keyBase64 string, timeFrame int64, quitChan chan bool) {
+	util.InitConfigDir()
 	util.InitTimestampFile()
 
 	keyFileBytes := util.GetKeyBytes(keyBase64)
@@ -52,7 +53,7 @@ func Run(port string, keyBase64 string, timeFrame int64, quitChan chan bool) {
 		}
 
 		if validateIncomingData(encryptedBytes[0:util.EncryptedDataLen], aeadKey, timeFrame) {
-			_, err := net.Dial("unix", "/tmp/go-remote.sock")
+			_, err := net.Dial("unix", util.SocketPath)
 			if err != nil {
 				log.Println("ERROR: could not connect to unix socket: ", err)
 			}
