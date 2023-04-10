@@ -37,8 +37,18 @@ func sendData(address, keyBase64 string) string {
 	resolvedAddress, err := net.ResolveUDPAddr("udp", address)
 	util.Check(err, "could not resolve address")
 
-	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: util.GetSourcePort(keyFileBytes)}, resolvedAddress)
+	sourcePort := util.GetSourcePort(keyFileBytes)
+
+	if util.IsLinux() && util.IsPortInUdpSourcePorts(sourcePort) {
+		log.Fatal("source port already in use:", sourcePort)
+	}
+
+	connection, err := net.DialUDP("udp", &net.UDPAddr{Port: sourcePort}, resolvedAddress)
 	util.Check(err, "could not connect to udp server")
+
+	if util.IsLinux() && !util.IsPortInUdpSourcePorts(sourcePort) {
+		log.Fatal("source port was not used when creating connection:", sourcePort)
+	}
 
 	_, err = io.Copy(connection, bytes.NewReader(dataToSend))
 	util.Check(err, "could not send bytes to udp server")
